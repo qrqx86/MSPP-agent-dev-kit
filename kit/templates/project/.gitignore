@@ -1,0 +1,15 @@
+node_modules/
+dist/
+bin/
+obj/
+out/
+*.zip
+!solution/**/*.zip
+.env
+.env.*
+test-results/
+playwright-report/
+.claude/state/
+.claude/settings.local.json
+*.user
+.vs/

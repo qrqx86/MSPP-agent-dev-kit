@@ -1,0 +1,132 @@
+# pp-kit – Vibe coding on the Power Platform with Claude Code
+
+A reusable kit for building Power Platform solutions with Claude Code: 10 specialised subagents, shared team rules,
+a baseline standards skill, workflow skills (`/story`, `/review`, ...), safety hooks and project templates.
+It builds on **all** Microsoft `power-platform-skills` plugins and adds what they do not cover: DEV-only guard rails
+(PROD/TEST blocked), secret scanning, a story-driven workflow linked to **Azure DevOps Boards or GitHub Issues**,
+DECISION work items for every approval, and a multi-perspective review gate.
+
+## Installation
+```powershell
+git clone https://github.com/<owner>/<repo>.git pp-kit
+cd pp-kit
+node install.cjs --dry-run   # shows what would be copied
+node install.cjs             # installs into ~/.claude (automatic backup of settings.json)
+node install.cjs --uninstall # removes the kit (other hooks are preserved)
+```
+Restart Claude Code after installing. Requirements:
+- Node.js ≥ 18
+- `dataverse` and `pa` CLIs: `npm i -g @microsoft/dataverse @microsoft/power-apps-cli`
+- PAC CLI, up to date: `dotnet tool update --global Microsoft.PowerApps.CLI.Tool`
+- Azure DevOps tracker: az CLI (`az login`) for the `azure-devops` MCP server · GitHub tracker: `gh` CLI (`gh auth login`)
+
+Microsoft plugins (marketplace `microsoft/power-platform-skills`): power-pages, model-apps, canvas-apps,
+code-apps-preview, mcp-apps, pcf, power-automate, dataverse, mobile-app, power-apps-mobile-extension,
+process-intelligence. Update:
+```powershell
+$env:GIT_CONFIG_COUNT='1'; $env:GIT_CONFIG_KEY_0='url.https://github.com/.insteadOf'; $env:GIT_CONFIG_VALUE_0='git@github.com:'
+claude plugin marketplace update power-platform-skills
+claude plugin update dataverse@power-platform-skills   # repeat for each plugin
+```
+(The variable forces HTTPS: otherwise the `dataverse` plugin is cloned via SSH.)
+
+## Tests
+```powershell
+node tests/hooks.test.cjs     # deterministic hook tests
+node tests/validate-kit.cjs   # kit structure, obsolete commands, real environment URLs, rule IDs
+node tests/run-evals.cjs      # agent behaviour scenarios (calls Claude, costs tokens)
+node tests/run-evals.cjs --only alma-no-prod-import
+```
+
+## Contents
+| Folder | Destination | Content |
+|---|---|---|
+| `kit/agents/` | `~/.claude/agents/` | Alma, Dora, Sigi, Cody, Paula, Moritz, Flo, Peppi, Tessa, Kuno (model, colour, preloaded skills) |
+| `kit/skills/pp-team-rules/` | `~/.claude/skills/` | common rules: Rule 0 environment, valid tools, story files, DECISIONS, escalation after 2 attempts, result format, PAC pitfalls |
+| `kit/skills/pp-standards/` | `~/.claude/skills/` | baseline standards with rule IDs (+ optional `rules/` for your organization rulebook) |
+| `kit/skills/{new-project,story,data-model,review,test,deploy-test}/` | `~/.claude/skills/` | workflows invoked with `/name` |
+| `kit/hooks/` | `~/.claude/hooks/pp-kit/` | Node.js hooks |
+| `kit/templates/` | `~/.claude/pp-kit/templates/` | `CLAUDE.md`, `.mcp.json`, `.gitignore`, `docs/stories/_template/`, `docs/adr/`, DECISION procedure |
+| `kit/evals/` | – | behaviour scenarios |
+
+## Agents
+| Agent | Model | Delegates to (Microsoft skills) |
+|---|---|---|
+| Alma (ALM) | opus | dataverse:dv-solution, power-pages:plan-alm/setup-pipeline/deploy-pipeline/export/import |
+| Dora (Dataverse) | opus | dataverse:dv-metadata, power-pages:setup-datamodel |
+| Sigi (security) | opus | dataverse:dv-security, power-pages:create-webroles/table-permissions/audit-permissions |
+| Cody (Code Apps) | sonnet | code-apps-preview:* (`pa` CLI) |
+| Paula (Power Pages SPA) | sonnet | power-pages:create-site/integrate-webapi/add-localization/deploy-site |
+| Moritz (model-driven apps) | sonnet | model-apps:app-builder/genpage, dataverse:dv-metadata |
+| Flo (Power Automate) | sonnet | power-automate:* (FlowAgent MCP) |
+| Peppi (pro-code) | sonnet | pcf:pcf |
+| Tessa (tests) | sonnet | Playwright + power-platform-playwright-samples, power-pages:test-site |
+| Kuno (quality, read-only) | opus | power-pages:scan-code/security-review/audit-permissions |
+
+## Workflow
+1. `/new-project <Name>` – repositories, `CLAUDE.md`, `.mcp.json`, pac/dataverse auth, solutions.
+2. `/story <ID>` – `docs/stories/<ID>/spec.md`, `plan.md`, `tasks.md` (owner agent and owned files per task),
+   consistency check, approval as a DECISION, delegation.
+3. `/data-model` – Dora proposes, Sigi derives roles and permissions, approval, creation.
+4. `/review` – automated checks → Kuno in parallel on 4 perspectives → verification of every Critical/High finding.
+5. `/test` – Tessa with Playwright on DEV.
+6. `/deploy-test` – quality gate, then Alma and the release pipeline to TEST.
+
+`/new-project`, `/story` and `/deploy-test` can only be started by a person (`disable-model-invocation`).
+
+## Work item tracker: Azure DevOps or GitHub
+Declared per project in `CLAUDE.md` (`- Work item tracker: azure-devops | github`).
+| | Azure DevOps | GitHub |
+|---|---|---|
+| Story | User Story work item | Issue |
+| Commit reference | `AB#123` | `#123` |
+| DECISION | Task child of the story, tag `Decision` | Issue with label `decision`, `Parent: #123` in the body |
+| Tooling | `azure-devops` MCP server | `gh` CLI (or a GitHub MCP server) |
+| Pipelines | Azure Pipelines + Power Platform Build Tools | GitHub Actions + `microsoft/powerplatform-actions` |
+
+## Hooks
+| Hook | Event | Scope | Effect |
+|---|---|---|---|
+| `pre-shell.cjs` | PreToolUse Bash/PowerShell | everywhere | **denies** `pac admin delete/reset`, `pac env delete`; **blocks** pac/pa/dataverse/az/curl/node against TEST, UAT, QA, STAGING and PROD (recognised by a lifecycle word in the host name, also through the active pac profile); **asks for confirmation** for imports, site uploads, pushes, pipeline/workflow runs, GitHub issue changes |
+| | | pp-kit projects with a declared DEV | **allow-list**: only the DEV environment of `CLAUDE.md` (URL or ID), also for the active pac profile |
+| | | pp-kit projects | blocks pushes without a solution (`pac pcf push`, `pa app push`) and `git commit` without a story reference (`AB#<ID>` or `#<ID>`) |
+| `pre-mcp.cjs` | PreToolUse MCP Dataverse/Azure DevOps/GitHub/FlowAgent | everywhere | blocks TEST/STAGING/PROD and, in projects, any environment other than DEV; asks for confirmation for writes |
+| `pre-write.cjs` | PreToolUse Write/Edit | everywhere | blocks passwords, keys, client secrets, connection strings, JWTs |
+| `post-lint.cjs` | PostToolUse Write/Edit | everywhere | Prettier/ESLint `--fix` if installed in the project, `dotnet format whitespace` |
+| `session-start.cjs` | SessionStart | pp-kit projects | active story (from the branch), open DECISIONS and unfinished tasks |
+| `subagent-stop.cjs` | SubagentStop | pp-kit projects | sends back a team agent's result that lacks the "Rules applied" section |
+| `stop-reminder.cjs` | Stop | pp-kit projects | reminds you of /review and /test if missing or not matching HEAD |
+
+"pp-kit project" = a folder whose `CLAUDE.md` contains the marker `<!-- pp-kit:project -->` (the template has it).
+Kill switch: `PPKIT_DISABLE_HOOKS=1`. Local configuration (not overwritten by the installer):
+`~/.claude/hooks/pp-kit/config.json`, for example to add your environment naming scheme:
+```json
+{
+  "prodPatterns": ["contoso-prd-\\d+\\.crm4\\.dynamics\\.com"],
+  "nonDevPatterns": ["-(tst|acc)-\\d{2}\\.crm4\\.dynamics\\.com"],
+  "allowPatterns": ["az boards"]
+}
+```
+False positive in the secret scan: add the comment `pp-kit:allow-secret` on that line.
+
+## Standards and your organization rulebook
+The `pp-standards` skill contains baseline rules with stable IDs (ALM-01 DEV only, NAM-* naming, DV-* data model,
+SEC-* security, FE-* front end, AU-* automation, TST-* testing, ...) that agents cite in plans, results and reviews.
+To use your own rulebook, either reference it in the project `CLAUDE.md` or link it into the skill:
+```powershell
+$env:PPKIT_RULES_REPO = "$HOME\repos\my-pp-rules"; node install.cjs
+```
+Precedence: project `CLAUDE.md` → organization rulebook → `pp-standards` → Microsoft skills → general knowledge.
+Project-specific deviations go into the "Approved deviations" section of `CLAUDE.md`.
+
+## Design choices
+- Hooks in Node.js (Windows without Git Bash, macOS, Linux).
+- Distributed with an installer, not as a plugin/marketplace.
+- The MCP server built into PAC (`pac copilot mcp`) is not used: it is redundant and would bypass the shell hooks.
+- Test Engine (`pac test run`) is deprecated: tests use Playwright.
+- Dataverse native Git integration does not support SPA sites: the SPA source stays in the repository.
+- Permission rules (`permissions.deny`) are not written into the global settings: prohibitions live in the tested hooks.
+
+## Disclaimer
+Community project, not affiliated with or endorsed by Microsoft or Anthropic. The hooks are guard rails, not a
+security boundary: keep proper environment permissions, DLP policies and approvals in place.

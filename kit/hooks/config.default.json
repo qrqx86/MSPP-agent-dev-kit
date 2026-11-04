@@ -1,0 +1,45 @@
+{
+  "_comment": "Defaults. Do not edit: put overrides in config.json next to this file (arrays are appended).",
+  "prodPatterns": [
+    "\\bprod(uction)?\\b"
+  ],
+  "_nonDev": "Agents must not connect to TEST, UAT, QA, STAGING or PROD. Recognised by a lifecycle word in the environment host name; add your own naming scheme in config.json.",
+  "nonDevPatterns": [
+    "\\b(test|uat|qa|stag|staging|preprod|prod|production)\\b[a-z0-9-]*\\.(crm\\d*\\.dynamics\\.com|powerappsportals\\.com|powerpages\\.microsoft\\.com)"
+  ],
+  "allowPatterns": [],
+  "remoteToolPattern": "\\b(pac|pa|dataverse|az|curl|Invoke-RestMethod|Invoke-WebRequest|irm|iwr|node|npx)\\b",
+  "checkActivePacProfile": true,
+  "requireStoryRef": true,
+  "_storyRef": "Azure Boards (AB#123) or GitHub issue (#123) reference.",
+  "storyRefPattern": "(AB#\\d+|(^|[\\s(\"'])#\\d+\\b)",
+  "denyPatterns": [
+    { "match": "\\bpac\\s+admin\\s+(delete|reset)\\b", "reason": "deleting/resetting environments" },
+    { "match": "\\bpac\\s+env\\s+delete\\b", "reason": "deleting environments" },
+    { "match": "\\bdataverse\\s+.*\\bbulk-?delete\\b", "reason": "bulk data deletion" }
+  ],
+  "askPatterns": [
+    { "match": "\\bpac\\s+solution\\s+(import|delete|upgrade)\\b", "reason": "importing/deleting a solution" },
+    { "match": "\\bpac\\s+pages\\s+upload-code-site\\b", "reason": "uploading the Power Pages site" },
+    { "match": "\\bpac\\s+pipeline\\s+deploy\\b", "reason": "release through Power Platform Pipelines" },
+    { "match": "\\baz\\s+pipelines\\s+run\\b", "reason": "starting an Azure DevOps pipeline" },
+    { "match": "\\bgh\\s+workflow\\s+run\\b", "reason": "starting a GitHub Actions workflow" },
+    { "match": "\\bgh\\s+issue\\s+(create|close|edit|delete)\\b", "reason": "changing a GitHub issue" },
+    { "match": "\\bpa\\s+app\\s+push\\b", "reason": "publishing a Code App" },
+    { "match": "\\bpac\\s+(pcf|plugin)\\s+push\\b", "reason": "publishing a pro-code component" }
+  ],
+  "solutionRequired": [
+    { "match": "\\bpac\\s+pcf\\s+push\\b", "require": "--solution-unique-name\\b", "hint": "--solution-unique-name <SolutionName>" },
+    { "match": "\\bpa\\s+app\\s+push\\b", "require": "(--solution-id\\b|PA_CLI_SOLUTION_ID)", "hint": "--solution-id <solution id>" },
+    { "match": "\\bpac\\s+code\\s+push\\b", "require": "(--solutionName|\\s-s)\\b", "hint": "--solutionName <SolutionName> (better: the pa CLI)" }
+  ],
+  "mcpWritePattern": "(create|update|upsert|delete|write|import|publish|execute|invoke|run|add|close|merge)",
+  "teamAgents": [
+    "alma-alm", "dora-dataverse", "sigi-security", "cody-codeapps", "paula-pages-spa",
+    "moritz-modeldriven", "flo-automate", "peppi-procode", "tessa-tests", "kuno-quality"
+  ],
+  "secretAllowFiles": [
+    "\\.example(\\.[a-z]+)?$",
+    "config\\.default\\.json$"
+  ]
+}

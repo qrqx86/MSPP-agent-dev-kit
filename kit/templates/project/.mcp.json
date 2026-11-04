@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "dataverse": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@microsoft/dataverse", "mcp", "https://<org-dev>.crm4.dynamics.com"]
+    },
+    "azure-devops": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@azure-devops/mcp", "<org>", "-d", "core", "work", "work-items", "pipelines", "--authentication", "azcli"]
+    }
+  }
+}
