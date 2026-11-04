@@ -28,3 +28,4 @@ Initialize the project **$ARGUMENTS** with the **alma-alm** agent. One step at a
 8. Create the work item "DECISION: Project setup $ARGUMENTS" with names, data and assumptions (`~/.claude/pp-kit/decision.md`).
 9. First commit `chore: project setup <story ref>` (with `AI-Assisted:` and `Verified:` lines), only after the user
    has provided the ID of the setup story/issue. Alma prepares the export and release pipelines in a dedicated story.
+10. Suggest the next step: `/project-plan <brief>` – Pia writes the project spec, architecture plan and initial backlog in `docs/project/`.

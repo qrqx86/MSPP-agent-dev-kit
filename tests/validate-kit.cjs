@@ -17,7 +17,7 @@ const field = (fm, k) => (fm.match(new RegExp(`^${k}:\\s*(.*)$`, 'm')) || [])[1]
 
 // 1) Agents
 const agents = fs.readdirSync(path.join(KIT, 'agents')).filter((f) => f.endsWith('.md'));
-if (agents.length !== 10) errors.push(`expected 10 agents, found ${agents.length}`);
+if (agents.length !== 11) errors.push(`expected 11 agents, found ${agents.length}`);
 for (const a of agents) {
   const f = path.join(KIT, 'agents', a);
   const fm = frontmatter(fs.readFileSync(f, 'utf8'));
@@ -39,11 +39,11 @@ for (const s of fs.readdirSync(skillsDir)) {
   if (!fm || field(fm, 'name') !== s || !field(fm, 'description')) err(f, 'invalid frontmatter name/description');
 }
 // Skills with external side effects: user-invoked only and with approval gates
-for (const s of ['new-project', 'deploy-test', 'story']) {
+for (const s of ['new-project', 'deploy-test', 'story', 'project-plan']) {
   const txt = fs.readFileSync(path.join(skillsDir, s, 'SKILL.md'), 'utf8');
   if (!/disable-model-invocation:\s*true/.test(txt)) errors.push(`skills/${s}: missing disable-model-invocation: true`);
 }
-for (const s of ['new-project', 'deploy-test', 'story', 'data-model']) {
+for (const s of ['new-project', 'deploy-test', 'story', 'data-model', 'project-plan']) {
   const txt = fs.readFileSync(path.join(skillsDir, s, 'SKILL.md'), 'utf8');
   if (!/<!-- gate: [\w-]+ -->/.test(txt)) errors.push(`skills/${s}: no approval gate <!-- gate: ... -->`);
 }

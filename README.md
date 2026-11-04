@@ -1,6 +1,6 @@
 # pp-kit – Vibe coding on the Power Platform with Claude Code
 
-A reusable kit for building Power Platform solutions with Claude Code: 10 specialised subagents, shared team rules,
+A reusable kit for building Power Platform solutions with Claude Code: 11 specialised subagents, shared team rules,
 a baseline standards skill, workflow skills (`/story`, `/review`, ...), safety hooks and project templates.
 It builds on **all** Microsoft `power-platform-skills` plugins and adds what they do not cover: DEV-only guard rails
 (PROD/TEST blocked), secret scanning, a story-driven workflow linked to **Azure DevOps Boards or GitHub Issues**,
@@ -41,17 +41,18 @@ node tests/run-evals.cjs --only alma-no-prod-import
 ## Contents
 | Folder | Destination | Content |
 |---|---|---|
-| `kit/agents/` | `~/.claude/agents/` | Alma, Dora, Sigi, Cody, Paula, Moritz, Flo, Peppi, Tessa, Kuno (model, colour, preloaded skills) |
+| `kit/agents/` | `~/.claude/agents/` | Pia, Alma, Dora, Sigi, Cody, Paula, Moritz, Flo, Peppi, Tessa, Kuno (model, colour, preloaded skills) |
 | `kit/skills/pp-team-rules/` | `~/.claude/skills/` | common rules: Rule 0 environment, valid tools, story files, DECISIONS, escalation after 2 attempts, result format, PAC pitfalls |
 | `kit/skills/pp-standards/` | `~/.claude/skills/` | baseline standards with rule IDs (+ optional `rules/` for your organization rulebook) |
-| `kit/skills/{new-project,story,data-model,review,test,deploy-test}/` | `~/.claude/skills/` | workflows invoked with `/name` |
+| `kit/skills/{new-project,project-plan,story,data-model,review,test,deploy-test}/` | `~/.claude/skills/` | workflows invoked with `/name` |
 | `kit/hooks/` | `~/.claude/hooks/pp-kit/` | Node.js hooks |
-| `kit/templates/` | `~/.claude/pp-kit/templates/` | `CLAUDE.md`, `.mcp.json`, `.gitignore`, `docs/stories/_template/`, `docs/adr/`, DECISION procedure |
+| `kit/templates/` | `~/.claude/pp-kit/templates/` | `CLAUDE.md`, `.mcp.json`, `.gitignore`, `docs/project/`, `docs/stories/_template/`, `docs/adr/`, DECISION procedure |
 | `kit/evals/` | – | behaviour scenarios |
 
 ## Agents
 | Agent | Model | Delegates to (Microsoft skills) |
 |---|---|---|
+| Pia (planner) | opus | – (writes spec.md, plan.md, tasks.md; builds nothing) |
 | Alma (ALM) | opus | dataverse:dv-solution, power-pages:plan-alm/setup-pipeline/deploy-pipeline/export/import |
 | Dora (Dataverse) | opus | dataverse:dv-metadata, power-pages:setup-datamodel |
 | Sigi (security) | opus | dataverse:dv-security, power-pages:create-webroles/table-permissions/audit-permissions |
@@ -65,14 +66,16 @@ node tests/run-evals.cjs --only alma-no-prod-import
 
 ## Workflow
 1. `/new-project <Name>` – repositories, `CLAUDE.md`, `.mcp.json`, pac/dataverse auth, solutions.
-2. `/story <ID>` – `docs/stories/<ID>/spec.md`, `plan.md`, `tasks.md` (owner agent and owned files per task),
+2. `/project-plan <brief>` – Pia writes `docs/project/spec.md`, `plan.md` (architecture) and `tasks.md` (initial backlog),
+   approval as a DECISION, then the stories are created in the tracker.
+3. `/story <ID>` – Pia writes `docs/stories/<ID>/spec.md`, `plan.md`, `tasks.md` (owner agent and owned files per task),
    consistency check, approval as a DECISION, delegation.
-3. `/data-model` – Dora proposes, Sigi derives roles and permissions, approval, creation.
-4. `/review` – automated checks → Kuno in parallel on 4 perspectives → verification of every Critical/High finding.
-5. `/test` – Tessa with Playwright on DEV.
-6. `/deploy-test` – quality gate, then Alma and the release pipeline to TEST.
+4. `/data-model` – Dora proposes, Sigi derives roles and permissions, approval, creation.
+5. `/review` – automated checks → Kuno in parallel on 4 perspectives → verification of every Critical/High finding.
+6. `/test` – Tessa with Playwright on DEV.
+7. `/deploy-test` – quality gate, then Alma and the release pipeline to TEST.
 
-`/new-project`, `/story` and `/deploy-test` can only be started by a person (`disable-model-invocation`).
+`/new-project`, `/project-plan`, `/story` and `/deploy-test` can only be started by a person (`disable-model-invocation`).
 
 ## Work item tracker: Azure DevOps or GitHub
 Declared per project in `CLAUDE.md` (`- Work item tracker: azure-devops | github`).

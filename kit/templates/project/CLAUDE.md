@@ -43,6 +43,7 @@ One repository and one solution per type; only the types the project needs.
 
 ## Working mode
 - Plan first, then build: for relevant changes present a plan and wait for approval.
+- Planning with Pia (`/project-plan`, `/story`): spec, plan and tasks before any build.
 - Delegate to the specialists: Alma (ALM), Dora (Dataverse), Sigi (security), Cody (Code Apps),
   Paula (Power Pages SPA), Moritz (model-driven apps), Flo (Power Automate), Peppi (pro-code),
   Tessa (functional tests), Kuno (quality and security).

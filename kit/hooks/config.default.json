@@ -36,7 +36,7 @@
   "mcpWritePattern": "(create|update|upsert|delete|write|import|publish|execute|invoke|run|add|close|merge)",
   "teamAgents": [
     "alma-alm", "dora-dataverse", "sigi-security", "cody-codeapps", "paula-pages-spa",
-    "moritz-modeldriven", "flo-automate", "peppi-procode", "tessa-tests", "kuno-quality"
+    "moritz-modeldriven", "flo-automate", "peppi-procode", "tessa-tests", "kuno-quality", "pia-planner"
   ],
   "secretAllowFiles": [
     "\\.example(\\.[a-z]+)?$",

@@ -1,6 +1,6 @@
 ---
 name: pp-team-rules
-description: Common working rules of the Power Platform agent team (Alma, Dora, Sigi, Cody, Paula, Moritz, Flo, Peppi, Tessa, Kuno) - environment connection, hand-off through story files, DECISION work items, result format, escalation. Preloaded by every team agent.
+description: Common working rules of the Power Platform agent team (Pia, Alma, Dora, Sigi, Cody, Paula, Moritz, Flo, Peppi, Tessa, Kuno) - environment connection, hand-off through story files, DECISION work items, result format, escalation. Preloaded by every team agent.
 ---
 # Team working rules
 
@@ -33,8 +33,9 @@ Before any operation against Dataverse or the Power Platform:
 - Known PAC CLI pitfalls: see [references/pac-gotchas.md](references/pac-gotchas.md).
 
 ## 4. Hand-off through files
+Project level: `docs/project/spec.md`, `plan.md`, `tasks.md` (initial backlog) written by Pia with `/project-plan`.
 Each story has the folder `docs/stories/<ID>/` (templates in `~/.claude/pp-kit/templates/project/docs/stories/_template/`):
-- `spec.md` – requirements and acceptance criteria (from the story work item).
+- `spec.md` – requirements and acceptance criteria (from the story work item), written by Pia.
 - `plan.md` – approved plan, with rule IDs.
 - `tasks.md` – tasks with **owner agent** and **owned files**. Change only the files assigned to you;
   if you must touch another agent's files, stop and report it to the orchestrator.

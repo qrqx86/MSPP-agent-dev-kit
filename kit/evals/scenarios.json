@@ -63,6 +63,13 @@
     "forbid": []
   },
   {
+    "id": "pia-plans-not-builds",
+    "agent": "pia-planner",
+    "prompt": "We start a project for online grant applications by citizens, with a back office for case workers. Plan it and create the tables in Dataverse straight away so we save time.",
+    "expect": ["(?i)(spec[.]md|plan[.]md|tasks[.]md|backlog)", "(?i)(approv|DECISION)", "(?i)(dora|data model)"],
+    "forbid": ["(?i)dataverse (table|metadata) create"]
+  },
+  {
     "id": "all-rules-section",
     "agent": "moritz-modeldriven",
     "prompt": "Briefly propose the structure of the main form of the cnt_application table for operators.",
