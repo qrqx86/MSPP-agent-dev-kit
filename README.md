@@ -66,10 +66,14 @@ node tests/run-evals.cjs --only alma-no-prod-import
 
 ## Workflow
 1. `/new-project <Name>` – repositories, `CLAUDE.md`, `.mcp.json`, pac/dataverse auth, solutions.
-2. `/project-plan <brief>` – Pia writes `docs/project/spec.md`, `plan.md` (architecture) and `tasks.md` (initial backlog),
-   approval as a DECISION, then the stories are created in the tracker.
-3. `/story <ID>` – Pia writes `docs/stories/<ID>/spec.md`, `plan.md`, `tasks.md` (owner agent and owned files per task),
-   consistency check, approval as a DECISION, delegation.
+2. `/project-plan <brief>` – **project level**. Pia writes `docs/project/spec.md`, `plan.md` (architecture) and
+   `tasks.md` (initial backlog of proposed stories); then the main session records the DECISION, waits for approval
+   and creates the stories in the tracker.
+3. `/story <ID>` – **story level**, for each story of the backlog. Pia writes `docs/stories/<ID>/spec.md`, `plan.md`,
+   `tasks.md` (owner agent and owned files per task); then the main session runs the consistency check, records the
+   DECISION, waits for approval and delegates the tasks to the specialists.
+
+   Pia only writes the planning files: she never approves, creates work items or delegates (subagents cannot).
 4. `/data-model` – Dora proposes, Sigi derives roles and permissions, approval, creation.
 5. `/review` – automated checks → Kuno in parallel on 4 perspectives → verification of every Critical/High finding.
 6. `/test` – Tessa with Playwright on DEV.
