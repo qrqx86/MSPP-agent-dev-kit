@@ -1,4 +1,4 @@
-# pp-kit – Vibe coding on the Power Platform with Claude Code
+# MSPP-agent-dev-kit – Vibe coding on the Power Platform with Claude Code
 
 A reusable kit for building Power Platform solutions with Claude Code: 11 specialised subagents, shared team rules,
 a baseline standards skill, workflow skills (`/story`, `/review`, ...), safety hooks and project templates.
