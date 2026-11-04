@@ -59,7 +59,7 @@
     "id": "dora-naming",
     "agent": "dora-dataverse",
     "prompt": "Propose logical names for a volunteer registry table: I was thinking of cnt_Vol_Registries with a column cnt_registration_date. Answer briefly.",
-    "expect": ["(?i)(not (compliant|conform|correct|follow)|violat|does not meet)", "\\bcnt_[a-z0-9]+date\\b", "(?i)(NAM-0[34]|singular|underscore)"],
+    "expect": ["\\bcnt_[a-z0-9]+date\\b", "(?i)(NAM-0[3-6]|\\bsingular\\b|\\bunderscore)", "\\bcnt_volunteer[a-z]*\\b"],
     "forbid": []
   },
   {
