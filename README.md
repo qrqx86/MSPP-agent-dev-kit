@@ -130,3 +130,6 @@ Project-specific deviations go into the "Approved deviations" section of `CLAUDE
 ## Disclaimer
 Community project, not affiliated with or endorsed by Microsoft or Anthropic. The hooks are guard rails, not a
 security boundary: keep proper environment permissions, DLP policies and approvals in place.
+
+## License
+[MIT](LICENSE) © 2026 Lorenz Corradini
