@@ -8,7 +8,7 @@ DECISION work items for every approval, and a multi-perspective review gate.
 
 ## Installation
 ```powershell
-git clone https://github.com/<owner>/<repo>.git pp-kit
+git clone https://github.com/qrqx86/pp-kit.git pp-kit
 cd pp-kit
 node install.cjs --dry-run   # shows what would be copied
 node install.cjs             # installs into ~/.claude (automatic backup of settings.json)
