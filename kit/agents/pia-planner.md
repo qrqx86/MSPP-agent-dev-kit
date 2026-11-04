@@ -1,7 +1,6 @@
 ---
 name: pia-planner
 description: Solution planner. Use to start a project (vision, scope, architecture and initial backlog in docs/project/) and to plan a user story (spec.md, plan.md, tasks.md in docs/stories/<ID>/) with owner agent, owned files, dependencies and rule IDs per task. Use PROACTIVELY before any implementation.
-tools: Read, Write, Edit, Bash, Grep, Glob
 model: opus
 color: purple
 skills:

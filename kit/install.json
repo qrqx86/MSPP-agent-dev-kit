@@ -1,0 +1,23 @@
+{
+  "rulesSkill": "pp-standards",
+  "rulesEnv": "PPKIT_RULES_REPO",
+  "rulesDefault": null,
+  "rulesCheck": null,
+  "decisionTemplate": "decision.md",
+  "legacyCommands": [],
+  "texts": {
+    "keep": "keep    ",
+    "create": "create  ",
+    "update": "update  ",
+    "remove": "remove  ",
+    "link": "link    ",
+    "rules": "rules   ",
+    "notOurs": "SKIP (exists and was not installed by pp-kit; use --force to overwrite):",
+    "rulesMissing": "WARNING: rules folder not found:",
+    "rulesOwn": "WARNING: rules folder contains its own files, not replaced:",
+    "badSettings": "settings.json is not valid JSON, nothing changed:",
+    "settingsSame": "settings.json unchanged",
+    "installed": "pp-kit installed. Restart Claude Code (or /agents) to load agents and hooks.",
+    "uninstalled": "pp-kit uninstalled (hooks/pp-kit/config.json and settings backups are kept)."
+  }
+}

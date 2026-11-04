@@ -4,7 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { readInput } = require('./lib.cjs');
+const { readInput, msg } = require('./lib.cjs');
 
 const input = readInput();
 const file = String((input.tool_input && input.tool_input.file_path) || '');
@@ -21,7 +21,11 @@ const findUp = (start, test) => {
   }
 };
 const win = process.platform === 'win32';
-const run = (bin, args, cwd) => spawnSync(bin, args, { cwd, encoding: 'utf8', timeout: 60000, shell: win });
+// Windows .cmd launchers need a shell: build one quoted command line. Elsewhere: no shell, raw arguments.
+const q = (s) => `"${String(s).replace(/"/g, '""')}"`;
+const run = (bin, args, cwd) => (win && /\.cmd$/i.test(bin)
+  ? spawnSync([bin, ...args].map(q).join(' '), { cwd, encoding: 'utf8', timeout: 60000, shell: true })
+  : spawnSync(bin, args, { cwd, encoding: 'utf8', timeout: 60000 }));
 
 const ext = path.extname(file).toLowerCase();
 
@@ -30,15 +34,15 @@ if (['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'].includes(ext)) {
   if (!root) process.exit(0);
   const bin = (name) => {
     const p = path.join(root, 'node_modules', '.bin', win ? `${name}.cmd` : name);
-    return fs.existsSync(p) ? `"${p}"` : null;
+    return fs.existsSync(p) ? p : null;
   };
   const prettier = bin('prettier');
-  if (prettier) run(prettier, ['--write', `"${file}"`], root);
+  if (prettier) run(prettier, ['--write', file], root);
   const eslint = bin('eslint');
   if (eslint) {
-    const r = run(eslint, ['--fix', '--no-warn-ignored', `"${file}"`], root);
+    const r = run(eslint, ['--fix', '--no-warn-ignored', file], root);
     if (r.status === 1 && r.stdout && r.stdout.trim()) {
-      process.stderr.write(`[pp-kit] ESLint reports errors in ${file}:\n${r.stdout.trim().slice(0, 4000)}\n`);
+      process.stderr.write(`[pp-kit] ${msg('eslint', { file })}\n${r.stdout.trim().slice(0, 4000)}\n`);
       process.exit(2); // feed lint errors back to Claude
     }
   }
@@ -47,6 +51,6 @@ if (['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'].includes(ext)) {
     const f = fs.readdirSync(d).find((n) => n.endsWith('.csproj'));
     return f ? path.join(d, f) : null;
   });
-  if (proj) run('dotnet', ['format', 'whitespace', `"${proj}"`, '--include', `"${file}"`], path.dirname(proj));
+  if (proj) run('dotnet', ['format', 'whitespace', proj, '--include', file], path.dirname(proj));
 }
 process.exit(0);

@@ -26,7 +26,14 @@ for (const a of agents) {
   if (!field(fm, 'description') || field(fm, 'description').length < 60) err(f, 'description missing or too short');
   if (!/^(opus|sonnet|haiku|fable|inherit)$/.test(field(fm, 'model') || '')) err(f, 'model missing or invalid');
   for (const s of ['pp-standards', 'pp-team-rules']) if (!fm.includes(`- ${s}`)) err(f, `skill ${s} not preloaded`);
-  if (a.startsWith('kuno') && /\b(Write|Edit)\b/.test(field(fm, 'tools') || '')) err(f, 'Kuno must not have Write/Edit');
+  // A tools allowlist removes Skill and every MCP tool: agents inherit the tools (restrict with disallowedTools).
+  if (field(fm, 'tools') !== undefined) err(f, 'tools allowlist found: it removes Skill and MCP tools; use disallowedTools');
+  if (a.startsWith('kuno') && !/\bWrite\b.*\bEdit\b/.test(field(fm, 'disallowedTools') || '')) err(f, 'Kuno must disallow Write and Edit');
+  // Subagents cannot start other agents or ask the user: delegation goes through the orchestrator.
+  const body = fs.readFileSync(f, 'utf8').replace(/^---[\s\S]*?---/, '');
+  for (const line of body.split(/\r?\n/)) {
+    if (/\b(agent|agente) `[\w:-]+`/i.test(line) && !/orchestrat/i.test(line)) err(f, `delegates to another agent: "${line.trim().slice(0, 80)}"`);
+  }
 }
 
 // 2) Skills
@@ -56,7 +63,6 @@ const ruleId = /\b(ALM|NAM|DV|SEC|FE|CA|BE|AU|PC|OB|ACC|MUL|TST)-\d{2}\b/g;
 // 4) Content rules over agents, skills and templates (hooks excluded: they match these on purpose)
 const obsolete = [
   [/\bpac solution create(?![-\w])/, 'pac solution create does not exist (use pac solution init)'],
-  [/\bpac data\b/, 'pac data does not exist'],
   [/\bpac test run\b/, 'Test Engine is deprecated'],
 ];
 // Lines that explicitly warn against a command are allowed to name it.

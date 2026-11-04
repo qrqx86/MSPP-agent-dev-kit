@@ -7,14 +7,29 @@ It builds on **all** Microsoft `power-platform-skills` plugins and adds what the
 DECISION work items for every approval, and a multi-perspective review gate.
 
 ## Installation
-```powershell
+Windows (PowerShell), macOS and Linux (bash/zsh) – the same commands:
+```bash
 git clone https://github.com/qrqx86/pp-kit.git pp-kit
 cd pp-kit
 node install.cjs --dry-run   # shows what would be copied
 node install.cjs             # installs into ~/.claude (automatic backup of settings.json)
-node install.cjs --uninstall # removes the kit (other hooks are preserved)
+node install.cjs --uninstall # removes the kit (your other hooks, skills and config.json are preserved)
 ```
-Restart Claude Code after installing. Requirements:
+Restart Claude Code after installing.
+
+What the installer touches in `~/.claude`:
+| Path | Change |
+|---|---|
+| `agents/<11 agents>.md`, `skills/<9 skills>/` | copied; an agent or skill **with the same name that pp-kit did not install is skipped** (use `--force` to overwrite) |
+| `hooks/pp-kit/` | hook scripts; your `config.json` there is never overwritten or removed |
+| `pp-kit/` | templates, DECISION procedure, `manifest.json` (what was installed, used by `--uninstall`) |
+| `settings.json` | pp-kit hook entries added (re-install replaces only them); backup `settings.json.bak-ppkit-<timestamp>` |
+
+Re-installing overwrites local edits to pp-kit's own agents and skills: customise through the project `CLAUDE.md`,
+your rulebook or `config.json` instead. Requires a Claude Code version with subagent `skills` preloading and
+`SubagentStop` hooks (2025 or later).
+
+Requirements:
 - Node.js ≥ 18
 - `dataverse` and `pa` CLIs: `npm i -g @microsoft/dataverse @microsoft/power-apps-cli`
 - PAC CLI, up to date: `dotnet tool update --global Microsoft.PowerApps.CLI.Tool`
@@ -32,11 +47,13 @@ claude plugin update dataverse@power-platform-skills   # repeat for each plugin
 
 ## Tests
 ```powershell
-node tests/hooks.test.cjs     # deterministic hook tests
+node tests/hooks.test.cjs     # deterministic hook tests (copies the hooks to a temp folder)
+node tests/install.test.cjs   # installer and uninstaller in a temporary ~/.claude
 node tests/validate-kit.cjs   # kit structure, obsolete commands, real environment URLs, rule IDs
 node tests/run-evals.cjs      # agent behaviour scenarios (calls Claude, costs tokens)
 node tests/run-evals.cjs --only alma-no-prod-import
 ```
+The evals run the agents **installed** in `~/.claude` (install first), headless in plan mode.
 
 ## Contents
 | Folder | Destination | Content |
@@ -95,18 +112,19 @@ Declared per project in `CLAUDE.md` (`- Work item tracker: azure-devops | github
 ## Hooks
 | Hook | Event | Scope | Effect |
 |---|---|---|---|
-| `pre-shell.cjs` | PreToolUse Bash/PowerShell | everywhere | **denies** `pac admin delete/reset`, `pac env delete`; **blocks** pac/pa/dataverse/az/curl/node against TEST, UAT, QA, STAGING and PROD (recognised by a lifecycle word in the host name, also through the active pac profile); **asks for confirmation** for imports, site uploads, pushes, pipeline/workflow runs, GitHub issue changes |
-| | | pp-kit projects with a declared DEV | **allow-list**: only the DEV environment of `CLAUDE.md` (URL or ID), also for the active pac profile |
-| | | pp-kit projects | blocks pushes without a solution (`pac pcf push`, `pa app push`) and `git commit` without a story reference (`AB#<ID>` or `#<ID>`) |
-| `pre-mcp.cjs` | PreToolUse MCP Dataverse/Azure DevOps/GitHub/FlowAgent | everywhere | blocks TEST/STAGING/PROD and, in projects, any environment other than DEV; asks for confirmation for writes |
-| `pre-write.cjs` | PreToolUse Write/Edit | everywhere | blocks passwords, keys, client secrets, connection strings, JWTs |
+| `pre-shell.cjs` | PreToolUse Bash/PowerShell | everywhere | **denies** creating, deleting, resetting, restoring or copying environments (`pac admin …`, `pac env …`) and `pac data bulk-delete`; **blocks** TEST, UAT, QA, STAGING and PROD – checked only on environment designators: Power Platform hosts, `--environment`/`--environment-id`/`-env`/`--url` values of pac/pa/dataverse, the active pac profile and release commands (so `vite build --mode production` is fine); **asks for confirmation** for imports, data imports, site uploads, pushes, pipeline/workflow runs, GitHub issue changes |
+| | | pp-kit projects with a declared DEV | **allow-list**: only the DEV environment of `CLAUDE.md` (exact URL or ID), also for the active pac profile; local pac commands (`solution pack/unpack`, …) skip the profile check |
+| | | pp-kit projects | blocks pushes without a solution (`pac pcf push`, `pa app push`) and `git commit` (also `-F file`, `git -C dir`) without a story reference of the project tracker (`AB#<ID>` or `#<ID>`) |
+| `pre-mcp.cjs` | PreToolUse MCP Dataverse/Azure DevOps/GitHub/FlowAgent | everywhere | blocks TEST/STAGING/PROD hosts and environment arguments and, in projects, any environment (URL or GUID) other than DEV; asks for confirmation for write operations (verbs such as create, update, set, edit, run; reads such as `get_run_history` do not ask) |
+| `pre-write.cjs` | PreToolUse Write/Edit | everywhere | blocks passwords, keys, tokens (also unquoted in `.env`/YAML), client secrets, connection strings, SAS tokens, JWTs |
 | `post-lint.cjs` | PostToolUse Write/Edit | everywhere | Prettier/ESLint `--fix` if installed in the project, `dotnet format whitespace` |
 | `session-start.cjs` | SessionStart | pp-kit projects | active story (from the branch), open DECISIONS and unfinished tasks |
 | `subagent-stop.cjs` | SubagentStop | pp-kit projects | sends back a team agent's result that lacks the "Rules applied" section |
-| `stop-reminder.cjs` | Stop | pp-kit projects | reminds you of /review and /test if missing or not matching HEAD |
+| `stop-reminder.cjs` | Stop | pp-kit projects | reminds you of /review and /test if missing or if the code changed since (state recorded by `state.cjs`; committing reviewed code keeps it valid) |
 
 "pp-kit project" = a folder whose `CLAUDE.md` contains the marker `<!-- pp-kit:project -->` (the template has it).
-Kill switch: `PPKIT_DISABLE_HOOKS=1`. Local configuration (not overwritten by the installer):
+Kill switch: `PPKIT_DISABLE_HOOKS=1`. Texts are in `hooks/pp-kit/messages.json`. Local configuration (not overwritten
+by the installer; if it is not valid JSON or contains an invalid regex, the hooks block until it is fixed):
 `~/.claude/hooks/pp-kit/config.json`, for example to add your environment naming scheme:
 ```json
 {
@@ -137,7 +155,8 @@ Project-specific deviations go into the "Approved deviations" section of `CLAUDE
 
 ## Disclaimer
 Community project, not affiliated with or endorsed by Microsoft or Anthropic. The hooks are guard rails, not a
-security boundary: keep proper environment permissions, DLP policies and approvals in place.
+security boundary: they read the command text, so values hidden in shell variables or scripts (`$u=...; pac ... --environment $u`,
+`pwsh -File deploy.ps1`) are not seen. Keep proper environment permissions, DLP policies and approvals in place.
 
 ## License
 [MIT](LICENSE) © 2026 Lorenz Corradini

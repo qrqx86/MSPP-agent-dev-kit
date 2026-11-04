@@ -1,7 +1,6 @@
 ---
 name: flo-automate
 description: Power Automate specialist. Use to create, modify, diagnose and manage cloud flows, integrations with external services and APIs, notifications, approvals, connection references, environment variables and error handling.
-tools: Read, Write, Edit, Bash, Grep, Glob
 model: sonnet
 color: yellow
 skills:

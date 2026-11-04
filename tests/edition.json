@@ -1,0 +1,16 @@
+{
+  "_comment": "Edition-specific fixtures for tests/hooks.test.cjs (the hook code is the same in every edition).",
+  "marker": "<!-- pp-kit:project -->",
+  "devLine": "- DEV environment (the only one agents may use): URL https://{host} | ID {id}",
+  "githubLine": "- Work item tracker: github",
+  "projectDecisionsFile": "decisions.md",
+  "openState": "Open",
+  "approvedState": "Approved",
+  "rulesHeading": "Rules applied",
+  "out": {
+    "noStory": "no story ID",
+    "activeStory": "Active story: ",
+    "projectDecisions": "Open project DECISIONS \\(1,",
+    "reminder": "/review and /test"
+  }
+}

@@ -37,10 +37,6 @@ gh issue create --title "DECISION: <short question>" --label decision --assignee
 1. ... (pros/cons)
 ## Recommendation
 ...
-## Project-level decisions
-Decisions not tied to a story (e.g. "DECISION: Project plan") have no parent story: create them without the link and
-record them only in `docs/project/decisions.md` (Story column `–`).
-
 ## Rules
 <rule IDs>"
 ```
@@ -55,6 +51,10 @@ gh issue list --label decision --state open --search "Parent: #<storyId> in:body
 
 ### Close
 Approved: `gh issue close <n> --reason completed` + label `approved`; rejected: `--reason "not planned"` + label `rejected`.
+
+## Project-level decisions
+Decisions not tied to a story (e.g. "DECISION: Project plan") have no parent story: create them without the link and
+record them only in `docs/project/decisions.md` (Story column `–`).
 
 ## Closing after an answer in chat (both trackers)
 Set the state (Approved / Rejected) and add a comment: `Outcome: <option> · decided by <person> · <YYYY-MM-DD>`.

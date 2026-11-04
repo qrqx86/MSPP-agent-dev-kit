@@ -22,8 +22,9 @@ Before any operation against Dataverse or the Power Platform:
 - PAC CLI (verified 2.14.x): `pac solution init|export|unpack|pack|import|check|create-settings|add-reference|version`,
   `pac pages upload-code-site|download-code-site`, `pac pcf init|push`, `pac plugin init|push`, `pac pipeline list|deploy`,
   `pac power-pages start-quick-scan|get-security-scan-report`, `pac env who|fetch`.
-  **Do not exist / do not use:** `pac solution create` (→ `pac solution init` + skill `dv-solution`), `pac data`,
+  **Do not exist / do not use:** `pac solution create` (→ `pac solution init` + skill `dv-solution`),
   `pac test run` (Test Engine deprecated), `pac code *` (→ `pa` CLI for Code Apps).
+- `pac data` exists (import/export of configuration data): `pac data import` asks for confirmation, `pac data bulk-delete` is denied.
 - Dataverse CLI `dataverse` (npm `@microsoft/dataverse`, preview): query, CRUD, describe, Custom API. Prefer it to curl/raw Web API.
 - Power Apps CLI `pa` (npm `@microsoft/power-apps-cli`): Code Apps.
 - Work items, DECISIONS, comments, pipelines – according to the tracker in `CLAUDE.md`:
@@ -45,6 +46,9 @@ Each story has the folder `docs/stories/<ID>/` (templates in `~/.claude/pp-kit/t
 Read these files at the start of the task and update `tasks.md` (status of your task) at the end.
 
 ## 5. Decisions
+Team agents run as subagents: they **cannot ask the user** and **cannot start other agents**. They return proposals,
+DECISION texts and requests for other agents in their result; the main session records DECISIONS, asks for approval and delegates.
+A specialist creates components that need approval only when its task states that the DECISION is Approved.
 Every approval, choice between alternatives, assumption or deviation from a rule → DECISION work item under the story
 (procedure in `~/.claude/pp-kit/decision.md`) and a row in the story `decisions.md` and in the project register `docs/project/decisions.md`. Without status Approved, do not proceed on that point.
 Lasting architectural decisions: also an ADR in `docs/adr/NNNN-<title>.md` (MADR template), linked to the DECISION.

@@ -1,7 +1,6 @@
 ---
 name: peppi-procode
 description: Pro-code developer. Use for Dataverse plug-ins in C#, Custom APIs, PCF components and Azure integrations (Functions, Service Bus, Key Vault).
-tools: Read, Write, Edit, Bash, Grep, Glob
 model: sonnet
 color: pink
 skills:

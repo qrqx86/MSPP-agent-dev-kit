@@ -18,7 +18,7 @@ Story **$ARGUMENTS**. Tracker and its coordinates come from `CLAUDE.md` (Work tr
 - Record the plan as "DECISION: Plan story $ARGUMENTS" (`~/.claude/pp-kit/decision.md`), update `decisions.md` and `docs/project/decisions.md` (with Pia's new rows) and **wait for approval** (status Approved, or explicit answer in chat → update the DECISION).
 
 ## 3. Implementation
-Delegate the tasks of `tasks.md` in dependency order (data model → security → front end/back office/flows → pro-code). Pass each agent: story ID, task, owned files. Independent tasks with disjoint files may run in parallel.
+Delegate the tasks of `tasks.md` in dependency order (data model → security → front end/back office/flows → pro-code). Pass each agent: story ID, task, owned files and the Approved DECISIONS it relies on (subagents cannot ask the user). Independent tasks with disjoint files may run in parallel.
 
 ## 4. Quality
 Run `/review $ARGUMENTS` and `/test $ARGUMENTS`. Fix confirmed Critical/High findings by delegating to the owner agent.

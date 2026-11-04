@@ -1,4 +1,6 @@
 // Shared helpers for pp-kit hooks (Claude Code). Node >= 18, no dependencies.
+// The code is identical in every edition of the kit: language and conventions live in
+// config.default.json (patterns, file names) and messages.json (texts).
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -15,66 +17,6 @@ function readInput() {
   }
 }
 
-function loadConfig() {
-  const read = (f) => {
-    try { return JSON.parse(fs.readFileSync(path.join(__dirname, f), 'utf8')); } catch { return {}; }
-  };
-  const def = read('config.default.json');
-  const user = read('config.json');
-  const merged = { ...def, ...user };
-  // Arrays are concatenated so user config extends the defaults.
-  for (const k of ['prodPatterns', 'nonDevPatterns', 'allowPatterns', 'solutionRequired', 'secretAllowFiles', 'askPatterns', 'denyPatterns', 'teamAgents']) {
-    merged[k] = [...(def[k] || []), ...(user[k] || [])];
-  }
-  return merged;
-}
-
-const toRegex = (p) => (typeof p === 'string' ? new RegExp(p, 'i') : new RegExp(p.pattern, p.flags || 'i'));
-
-// A "pp-kit project" is any folder whose CLAUDE.md (in cwd or an ancestor) contains the marker <!-- pp-kit:project -->.
-const MARKER = /pp-kit:project/i;
-
-function readClaudeMd(root) {
-  try { return fs.readFileSync(path.join(root, 'CLAUDE.md'), 'utf8'); } catch { return ''; }
-}
-
-function findProjectRoot(start) {
-  let dir = path.resolve(start || process.cwd());
-  for (;;) {
-    if (fs.existsSync(path.join(dir, 'CLAUDE.md')) && MARKER.test(readClaudeMd(dir))) return dir;
-    const parent = path.dirname(dir);
-    if (parent === dir) return null;
-    dir = parent;
-  }
-}
-
-// DEV environment declared in the project CLAUDE.md (agents operate only on DEV), e.g.
-// "- DEV environment (the only one agents may use): URL https://contoso-dev.crm4.dynamics.com | ID <guid>"
-function projectDev(root) {
-  if (!root) return null;
-  const line = readClaudeMd(root).split(/\r?\n/).find((l) => /DEV environment/i.test(l));
-  if (!line) return null;
-  const url = (line.match(/https:\/\/([a-z0-9-]+\.crm\d*\.dynamics\.com)/i) || [])[1];
-  const id = (line.match(/\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/i) || [])[1];
-  if (!url && !id) return null; // still placeholders
-  return { host: url ? url.toLowerCase() : null, id: id ? id.toLowerCase() : null };
-}
-
-// Work item tracker declared in the project CLAUDE.md: "- Work item tracker: github" (default: azure-devops).
-function projectTracker(root) {
-  const line = readClaudeMd(root).split(/\r?\n/).find((l) => /Work item tracker/i.test(l)) || '';
-  return /\bgithub\b/i.test(line) ? 'github' : 'azure-devops';
-}
-
-// How a story id is written in commits and docs for the given tracker.
-const storyRef = (tracker, id) => (tracker === 'github' ? `#${id}` : `AB#${id}`);
-
-// True if a value (URL, host or id) designates the declared DEV environment.
-function isDev(dev, value) {
-  const v = String(value).toLowerCase().replace(/^["']|["']$/g, '');
-  return (dev.host && v.includes(dev.host)) || (dev.id && v === dev.id);
-}
-
 // Hard block (exit 2, reason goes to Claude).
 function block(message) {
   process.stderr.write(`[pp-kit] ${message}\n`);
@@ -89,4 +31,159 @@ function ask(reason) {
   process.exit(0);
 }
 
-module.exports = { readInput, loadConfig, toRegex, findProjectRoot, projectDev, projectTracker, storyRef, isDev, block, ask };
+function readJson(file, required) {
+  const p = path.join(__dirname, file);
+  if (!fs.existsSync(p)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch (e) {
+    // A broken config must not silently drop the team's own patterns: fail closed.
+    if (required) block(`${p} is not valid JSON (${e.message}). Fix or remove it; pp-kit blocks until then.`);
+    return {};
+  }
+}
+
+const MESSAGES = readJson('messages.json');
+
+// Message by key, with {placeholders}.
+function msg(key, vars = {}) {
+  const t = MESSAGES[key] || key;
+  return t.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m));
+}
+
+const toRegex = (p) => (typeof p === 'string' ? new RegExp(p, 'i') : new RegExp(p.pattern, p.flags || 'i'));
+
+const ARRAY_KEYS = ['prodPatterns', 'nonDevPatterns', 'envNamePatterns', 'allowPatterns', 'solutionRequired', 'secretAllowFiles',
+  'askPatterns', 'denyPatterns', 'teamAgents', 'mcpWriteVerbs', 'mcpReadVerbs', 'pacLocalCommands'];
+
+let cached = null;
+function loadConfig() {
+  if (cached) return cached;
+  const def = readJson('config.default.json', true);
+  const user = readJson('config.json', true);
+  const merged = { ...def, ...user };
+  // Arrays are concatenated so user config extends the defaults.
+  for (const k of ARRAY_KEYS) merged[k] = [...(def[k] || []), ...(user[k] || [])];
+  // Validate every pattern: an invalid user regex must block, not end in a non-blocking crash.
+  try {
+    for (const k of ['prodPatterns', 'nonDevPatterns', 'envNamePatterns', 'allowPatterns', 'secretAllowFiles']) merged[k].forEach(toRegex);
+    for (const k of ['askPatterns', 'denyPatterns', 'solutionRequired']) {
+      merged[k].forEach((r) => { toRegex(r.match); if (r.require) toRegex(r.require); });
+    }
+  } catch (e) {
+    block(`Invalid pattern in the pp-kit configuration (${e.message}).`);
+  }
+  cached = merged;
+  return merged;
+}
+
+function readClaudeMd(root) {
+  try { return fs.readFileSync(path.join(root, 'CLAUDE.md'), 'utf8'); } catch { return ''; }
+}
+
+// A pp-kit project is any folder whose CLAUDE.md (in cwd or an ancestor) matches projectMarkerPattern.
+function findProjectRoot(start) {
+  const marker = toRegex(loadConfig().projectMarkerPattern || 'pp-kit:project');
+  let dir = path.resolve(start || process.cwd());
+  for (;;) {
+    if (fs.existsSync(path.join(dir, 'CLAUDE.md')) && marker.test(readClaudeMd(dir))) return dir;
+    const parent = path.dirname(dir);
+    if (parent === dir) return null;
+    dir = parent;
+  }
+}
+
+const GUID = /\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/gi;
+const guidsIn = (s) => [...String(s).matchAll(GUID)].map((m) => m[1].toLowerCase());
+
+// Power Platform environment and site hosts (commercial, GCC High/DoD, China).
+const PP_HOST = /\b([a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:crm\d*\.(?:dynamics\.com|microsoftdynamics\.us|appsplatform\.us|dynamics\.cn)|powerappsportals\.(?:com|us)|powerpages\.microsoft\.com))(?![\w.-])/gi;
+const hostsIn = (s) => [...String(s).matchAll(PP_HOST)].map((m) => m[1].toLowerCase());
+const isOrgHost = (h) => /\.crm\d*\./.test(h);
+
+// DEV environment declared in the project CLAUDE.md (line matching devLinePattern), e.g.
+// "- DEV environment (the only one agents may use): URL https://contoso-dev.crm4.dynamics.com | ID <guid>"
+function projectDev(root) {
+  if (!root) return null;
+  const re = toRegex(loadConfig().devLinePattern || 'DEV environment');
+  const line = readClaudeMd(root).split(/\r?\n/).find((l) => re.test(l));
+  if (!line) return null;
+  const host = hostsIn(line).find(isOrgHost) || null;
+  const id = guidsIn(line)[0] || null;
+  if (!host && !id) return null; // still placeholders
+  return { host, id };
+}
+
+// Work item tracker declared in the project CLAUDE.md ("- Work item tracker: github"); default from config.
+function projectTracker(root) {
+  const cfg = loadConfig();
+  const re = toRegex(cfg.trackerLinePattern || 'Work item tracker');
+  const line = readClaudeMd(root).split(/\r?\n/).find((l) => re.test(l)) || '';
+  if (/\bgithub\b/i.test(line)) return 'github';
+  if (/azure[- ]?devops/i.test(line)) return 'azure-devops';
+  return cfg.defaultTracker || 'azure-devops';
+}
+
+// How a story id is written in commits and docs for the given tracker.
+const storyRef = (tracker, id) => (tracker === 'github' ? `#${id}` : `AB#${id}`);
+
+// True if a value (URL, host or GUID) designates the declared DEV environment. Exact match, no substrings.
+function isDev(dev, value) {
+  const v = String(value).toLowerCase().trim().replace(/^["']|["']$/g, '');
+  const host = v.replace(/^[a-z]+:\/\//, '').split(/[/?#:]/)[0];
+  return Boolean((dev.host && host === dev.host) || (dev.id && v === dev.id));
+}
+
+// Shell tokenizer: splits a command line into segments (on unquoted && || ; | & and newlines),
+// each an array of tokens without quotes. Good enough for policy checks; not a full shell parser.
+function tokenize(cmd) {
+  const segments = [];
+  let tokens = [];
+  let cur = '';
+  let has = false;
+  let quote = null;
+  const pushToken = () => { if (has) tokens.push(cur); cur = ''; has = false; };
+  const pushSegment = () => { pushToken(); if (tokens.length) segments.push(tokens); tokens = []; };
+  for (let i = 0; i < cmd.length; i++) {
+    const c = cmd[i];
+    if (quote) {
+      if (c === quote) quote = null;
+      else if (c === '\\' && quote === '"' && '"\\$`'.includes(cmd[i + 1] || '')) cur += cmd[++i];
+      else cur += c;
+      continue;
+    }
+    if (c === '"' || c === "'") { quote = c; has = true; continue; }
+    if (c === '\\' && i + 1 < cmd.length && !/\s/.test(cmd[i + 1])) { cur += cmd[++i]; has = true; continue; }
+    if (c === '\n' || c === ';') { pushSegment(); continue; }
+    if (c === '&' || c === '|') { if (cmd[i + 1] === c) i++; pushSegment(); continue; }
+    if (/\s/.test(c)) { pushToken(); continue; }
+    cur += c; has = true;
+  }
+  pushSegment();
+  return segments;
+}
+
+// Program of a segment: first token after env assignments and wrappers (npx, sudo, call, &).
+function program(tokens) {
+  let i = 0;
+  while (i < tokens.length && (/^\w+=/.test(tokens[i]) || /^(sudo|call|npx|-y|--yes|exec|command|time)$/i.test(tokens[i]))) i++;
+  const name = (tokens[i] || '').toLowerCase().split(/[\\/]/).pop().replace(/\.(exe|cmd|bat|ps1)$/, '');
+  return { name, args: tokens.slice(i + 1) };
+}
+
+// Values of the flags matching flagRe: "--flag value", "--flag=value", "--flag:value".
+function flagValues(args, flagRe) {
+  const out = [];
+  for (let i = 0; i < args.length; i++) {
+    const m = args[i].match(/^(-{1,2}[A-Za-z][\w-]*)(?:[=:](.*))?$/);
+    if (!m || !flagRe.test(m[1])) continue;
+    if (m[2] !== undefined) out.push(m[2]);
+    else if (i + 1 < args.length && !/^-/.test(args[i + 1])) out.push(args[++i]);
+  }
+  return out;
+}
+
+module.exports = {
+  readInput, loadConfig, toRegex, msg, findProjectRoot, projectDev, projectTracker, storyRef, isDev,
+  hostsIn, guidsIn, isOrgHost, tokenize, program, flagValues, block, ask,
+};

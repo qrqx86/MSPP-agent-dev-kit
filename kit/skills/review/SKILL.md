@@ -3,7 +3,7 @@ name: review
 description: Quality gate with Kuno - automated checks, parallel review by perspective (security, standards compliance, data protection, code quality) and verification of Critical/High findings.
 argument-hint: [Story-ID]
 ---
-Review of the changes against the main branch (`git diff origin/main...HEAD` + uncommitted changes). Story: $ARGUMENTS
+Review of the changes against the base branch (`git diff $(git merge-base HEAD origin/HEAD)` – fallback `origin/main` or `origin/master` – plus uncommitted changes). Story: $ARGUMENTS
 Output folder: `docs/stories/$ARGUMENTS/reviews/` (without a story: `docs/reviews/<date>/`).
 
 ## Step 1 – Automated checks
@@ -21,5 +21,6 @@ REJECTED findings are downgraded to "To discuss" with the reason.
 ## Step 4 – Outcome
 - Consolidated table (Severity | Location | Rule | Recommendation | Verification) in `reviews/outcome.md`.
 - Gate PASSED only if no CONFIRMED Critical or High finding remains.
-- If PASSED: write date/time and `git rev-parse HEAD` into `.claude/state/review.ok`.
+- If PASSED, the main session runs `node ~/.claude/hooks/pp-kit/state.cjs review` (records the reviewed state of the code;
+  committing it afterwards does not make it stale).
 - Every proposed deviation → "DECISION: Deviation <rule ID>".

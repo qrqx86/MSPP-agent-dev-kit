@@ -1,39 +1,74 @@
 {
-  "_comment": "Defaults. Do not edit: put overrides in config.json next to this file (arrays are appended).",
+  "_comment": "Defaults. Do not edit: put overrides in config.json next to this file (arrays are appended, other keys replaced). An invalid config.json blocks every command until fixed.",
+
+  "projectMarkerPattern": "pp-kit:project",
+  "devLinePattern": "DEV environment",
+  "trackerLinePattern": "Work item tracker",
+  "defaultTracker": "azure-devops",
+  "storyRefPatterns": {
+    "azure-devops": "\\bAB#\\d+",
+    "github": "(^|[\\s(\\[\"'])#\\d+\\b|[\\w.-]+/[\\w.-]+#\\d+"
+  },
+  "resultSectionPattern": "Rules applied",
+  "storyDecisionsFile": "decisions.md",
+  "projectDecisionsFile": "decisions.md",
+  "openStatePattern": "Open",
+  "doneStatePattern": "done",
+  "codePaths": ["src", "solution", "solutions", "tests", "pipelines", "Pipelines", ".github", "config"],
+
+  "_envChecks": "Lifecycle checks apply only to environment designators: Power Platform hosts, values of environment flags, MCP environment arguments and the active pac profile.",
   "prodPatterns": [
     "\\bprod(uction)?\\b"
   ],
-  "_nonDev": "Agents must not connect to TEST, UAT, QA, STAGING or PROD. Recognised by a lifecycle word in the environment host name; add your own naming scheme in config.json.",
   "nonDevPatterns": [
-    "\\b(test|uat|qa|stag|staging|preprod|prod|production)\\b[a-z0-9-]*\\.(crm\\d*\\.dynamics\\.com|powerappsportals\\.com|powerpages\\.microsoft\\.com)"
+    "\\b(test|uat|qa|stag|staging|preprod|prod|production)\\b[a-z0-9-]*\\.(crm\\d*\\.|powerappsportals\\.|powerpages\\.)"
+  ],
+  "envNamePatterns": [
+    "\\b(test|uat|qa|stag|staging|preprod)\\b"
   ],
   "allowPatterns": [],
-  "remoteToolPattern": "\\b(pac|pa|dataverse|az|curl|Invoke-RestMethod|Invoke-WebRequest|irm|iwr|node|npx)\\b",
+  "remoteTools": ["pac", "pa", "dataverse", "az", "azd", "curl", "wget", "http", "irm", "iwr", "invoke-restmethod", "invoke-webrequest",
+    "node", "tsx", "ts-node", "python", "python3", "py", "pwsh", "powershell", "dotnet", "func", "npm", "pnpm", "yarn", "playwright"],
+  "envFlagPattern": "^(--environment(-id|-url|url)?|--env|-env|--url|--target-env(ironment)?|--source-env(ironment)?)$",
+  "envFlagTools": ["pac", "pa", "dataverse"],
+  "releaseCommandPattern": "\\b(az\\s+pipelines\\s+(run|release)|gh\\s+workflow\\s+run|pac\\s+pipeline\\s+deploy)\\b",
   "checkActivePacProfile": true,
+  "pacLocalCommands": ["help", "install", "use", "auth", "telemetry", "tool", "solution init", "solution pack", "solution unpack",
+    "solution version", "solution create-settings", "solution add-reference", "solution add-license", "pcf init", "pcf version",
+    "plugin init", "package init", "package add-reference", "package add-solution", "package add-external-package", "package show",
+    "canvas pack", "canvas unpack", "pages bootstrap-migrate"],
   "requireStoryRef": true,
-  "_storyRef": "Azure Boards (AB#123) or GitHub issue (#123) reference.",
-  "storyRefPattern": "(AB#\\d+|(^|[\\s(\"'])#\\d+\\b)",
+
   "denyPatterns": [
-    { "match": "\\bpac\\s+admin\\s+(delete|reset)\\b", "reason": "deleting/resetting environments" },
-    { "match": "\\bpac\\s+env\\s+delete\\b", "reason": "deleting environments" },
-    { "match": "\\bdataverse\\s+.*\\bbulk-?delete\\b", "reason": "bulk data deletion" }
+    { "match": "\\bpac\\s+admin\\s+(create|delete|reset|restore|copy|backup)\\b", "reason": "creating, deleting, resetting, restoring or copying environments" },
+    { "match": "\\bpac\\s+(env|environment|environment-management)\\s+[\\w-]*(create|delete|reset|restore|copy)[\\w-]*", "reason": "changing environments" },
+    { "match": "\\bpac\\s+data\\s+bulk-delete\\b", "reason": "bulk data deletion" }
   ],
   "askPatterns": [
-    { "match": "\\bpac\\s+solution\\s+(import|delete|upgrade)\\b", "reason": "importing/deleting a solution" },
-    { "match": "\\bpac\\s+pages\\s+upload-code-site\\b", "reason": "uploading the Power Pages site" },
+    { "match": "\\bpac\\s+solution\\s+(import|delete|upgrade|publish)\\b", "reason": "importing/deleting/publishing a solution" },
+    { "match": "\\bpac\\s+pages\\s+upload(-code-site)?\\b", "reason": "uploading the Power Pages site" },
+    { "match": "\\bpac\\s+data\\s+import\\b", "reason": "importing data" },
+    { "match": "\\bpac\\s+auth\\s+(clear|delete)\\b", "reason": "removing pac auth profiles" },
     { "match": "\\bpac\\s+pipeline\\s+deploy\\b", "reason": "release through Power Platform Pipelines" },
-    { "match": "\\baz\\s+pipelines\\s+run\\b", "reason": "starting an Azure DevOps pipeline" },
+    { "match": "\\baz\\s+pipelines\\s+(run|release)\\b", "reason": "starting an Azure DevOps pipeline" },
     { "match": "\\bgh\\s+workflow\\s+run\\b", "reason": "starting a GitHub Actions workflow" },
-    { "match": "\\bgh\\s+issue\\s+(create|close|edit|delete)\\b", "reason": "changing a GitHub issue" },
+    { "match": "\\bgh\\s+issue\\s+(create|close|edit|delete|comment)\\b", "reason": "changing a GitHub issue" },
     { "match": "\\bpa\\s+app\\s+push\\b", "reason": "publishing a Code App" },
     { "match": "\\bpac\\s+(pcf|plugin)\\s+push\\b", "reason": "publishing a pro-code component" }
   ],
   "solutionRequired": [
     { "match": "\\bpac\\s+pcf\\s+push\\b", "require": "--solution-unique-name\\b", "hint": "--solution-unique-name <SolutionName>" },
-    { "match": "\\bpa\\s+app\\s+push\\b", "require": "(--solution-id\\b|PA_CLI_SOLUTION_ID)", "hint": "--solution-id <solution id>" },
-    { "match": "\\bpac\\s+code\\s+push\\b", "require": "(--solutionName|\\s-s)\\b", "hint": "--solutionName <SolutionName> (better: the pa CLI)" }
+    { "match": "\\bpa\\s+app\\s+push\\b", "require": "(--solution-id\\b|\\s-s(\\s|=)|PA_CLI_SOLUTION_ID)", "hint": "--solution-id <solution id> (or -s)" },
+    { "match": "\\bpac\\s+code\\s+push\\b", "require": "(--solutionName\\b|\\s-s(\\s|=))", "hint": "--solutionName <SolutionName> (better: the pa CLI)" }
   ],
-  "mcpWritePattern": "(create|update|upsert|delete|write|import|publish|execute|invoke|run|add|close|merge)",
+
+  "mcpEnvKeyPattern": "^(env|environment|environment_?id|environment_?url|environment_?name|env_?id|env_?url|environmentId|environmentUrl|instance_?url|org_?url|organization_?url|dataverse_?url)$",
+  "mcpReadVerbs": ["get", "list", "search", "describe", "read", "query", "fetch", "find", "diagnose", "validate", "preflight",
+    "preview", "resolve", "whoami", "doctor", "check", "view", "show", "download", "retrieve", "count", "test", "browse", "compile"],
+  "mcpWriteVerbs": ["create", "update", "upsert", "delete", "remove", "write", "import", "publish", "execute", "invoke", "run",
+    "add", "close", "merge", "set", "push", "restore", "copy", "enable", "disable", "cancel", "resubmit", "submit", "post", "patch",
+    "send", "reset", "assign", "edit", "switch", "fix", "reconnect", "deploy", "trigger", "link", "unlink", "clear", "smoke", "sync", "upload"],
+
   "teamAgents": [
     "alma-alm", "dora-dataverse", "sigi-security", "cody-codeapps", "paula-pages-spa",
     "moritz-modeldriven", "flo-automate", "peppi-procode", "tessa-tests", "kuno-quality", "pia-planner"

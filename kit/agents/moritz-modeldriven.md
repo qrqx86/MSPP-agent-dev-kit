@@ -1,7 +1,6 @@
 ---
 name: moritz-modeldriven
 description: Model-driven app specialist (back-office hub). Use for app modules, sitemap, forms, views, dashboards, business process flows, command bar, web resources and custom/generative pages.
-tools: Read, Write, Edit, Bash, Grep, Glob
 model: sonnet
 color: orange
 skills:
