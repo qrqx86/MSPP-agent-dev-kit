@@ -39,5 +39,11 @@ if (!m) {
     }
   }
 }
+// Open decisions of the whole project (register kept by Pia and the main session)
+const reg = path.join(root, 'docs', 'project', 'decisions.md');
+if (fs.existsSync(reg)) {
+  const open = fs.readFileSync(reg, 'utf8').split(/\r?\n/).filter((l) => /^\|/.test(l) && /\|\s*Open\s*\|/i.test(l));
+  if (open.length) lines.push(`Open project DECISIONS (${open.length}, register docs/project/decisions.md):\n${open.slice(0, 10).join('\n')}${open.length > 10 ? '\n...' : ''}`);
+}
 process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: lines.join('\n') } }));
 process.exit(0);

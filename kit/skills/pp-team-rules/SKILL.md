@@ -33,7 +33,8 @@ Before any operation against Dataverse or the Power Platform:
 - Known PAC CLI pitfalls: see [references/pac-gotchas.md](references/pac-gotchas.md).
 
 ## 4. Hand-off through files
-Project level: `docs/project/spec.md`, `plan.md`, `tasks.md` (initial backlog) written by Pia with `/project-plan`.
+Project level: `docs/project/spec.md`, `plan.md`, `tasks.md` (initial backlog) written by Pia with `/project-plan`,
+and `docs/project/decisions.md` – the project decision register (one row per DECISION of the whole project); read it before proposing alternatives.
 Each story has the folder `docs/stories/<ID>/` (templates in `~/.claude/pp-kit/templates/project/docs/stories/_template/`):
 - `spec.md` – requirements and acceptance criteria (from the story work item), written by Pia.
 - `plan.md` – approved plan, with rule IDs.
@@ -45,7 +46,7 @@ Read these files at the start of the task and update `tasks.md` (status of your 
 
 ## 5. Decisions
 Every approval, choice between alternatives, assumption or deviation from a rule → DECISION work item under the story
-(procedure in `~/.claude/pp-kit/decision.md`) and a row in `decisions.md`. Without status Approved, do not proceed on that point.
+(procedure in `~/.claude/pp-kit/decision.md`) and a row in the story `decisions.md` and in the project register `docs/project/decisions.md`. Without status Approved, do not proceed on that point.
 Lasting architectural decisions: also an ADR in `docs/adr/NNNN-<title>.md` (MADR template), linked to the DECISION.
 
 ## 6. Escalation after two attempts

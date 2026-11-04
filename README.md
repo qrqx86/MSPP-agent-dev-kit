@@ -73,7 +73,8 @@ node tests/run-evals.cjs --only alma-no-prod-import
    `tasks.md` (owner agent and owned files per task); then the main session runs the consistency check, records the
    DECISION, waits for approval and delegates the tasks to the specialists.
 
-   Pia only writes the planning files: she never approves, creates work items or delegates (subagents cannot).
+   Pia only writes the planning files and adds rows to the project decision register `docs/project/decisions.md`:
+   she never approves, creates work items or delegates (subagents cannot); the main session updates the register states.
 4. `/data-model` – Dora proposes, Sigi derives roles and permissions, approval, creation.
 5. `/review` – automated checks → Kuno in parallel on 4 perspectives → verification of every Critical/High finding.
 6. `/test` – Tessa with Playwright on DEV.

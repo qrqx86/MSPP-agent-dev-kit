@@ -59,7 +59,7 @@ One repository and one solution per type; only the types the project needs.
 - Microsoft Power Platform skills (all plugins of the power-platform-skills marketplace).
 - Team working rules: skill `pp-team-rules` (preloaded by the agents).
 - Work only on a user story with an ID; branch `feature/<ID>-<slug>`.
-- Story documents in `docs/stories/<ID>/` (spec, plan, tasks, decisions, reviews); ADRs in `docs/adr/`.
+- Story documents in `docs/stories/<ID>/` (spec, plan, tasks, decisions, reviews); ADRs in `docs/adr/`; project decision register `docs/project/decisions.md`.
 
 ## Decisions (binding)
 - Every approval, choice between alternatives, assumption or deviation from a rule is created as a

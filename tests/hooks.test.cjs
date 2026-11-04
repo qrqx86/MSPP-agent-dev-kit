@@ -75,6 +75,9 @@ expect('MCP to prod blocked', 'pre-mcp.cjs', { tool_name: 'mcp__dataverse__read_
 expectOut('MCP write asks', 'pre-mcp.cjs', { tool_name: 'mcp__dataverse__create_record', tool_input: { table: 'account' } }, /"ask"/);
 expectOut('GitHub MCP write asks', 'pre-mcp.cjs', { tool_name: 'mcp__github__create_issue', tool_input: { title: 'x' } }, /"ask"/);
 expect('MCP read allowed', 'pre-mcp.cjs', { tool_name: 'mcp__azure-devops__wit_get_work_item', tool_input: { id: 1 } }, 0);
+fs.mkdirSync(path.join(proj, 'docs', 'project'), { recursive: true });
+fs.writeFileSync(path.join(proj, 'docs', 'project', 'decisions.md'), '| #7 | 2026-11-04 | – | Use SPA | Open | – |\n| #8 | 2026-11-04 | #3 | X | Approved | – |\n');
+expectOut('SessionStart shows open project decisions', 'session-start.cjs', { cwd: proj }, /Open project DECISIONS \(1,/);
 expectOut('SessionStart outside git: asks for story ID', 'session-start.cjs', { cwd: proj }, /no story ID/);
 expectOut('SubagentStop without Rules applied: block', 'subagent-stop.cjs', { cwd: proj, agent_type: 'dora-dataverse', last_assistant_message: 'Done.' }, /"decision":"block"/);
 expectOut('SubagentStop with Rules applied: ok', 'subagent-stop.cjs', { cwd: proj, agent_type: 'dora-dataverse', last_assistant_message: '### Rules applied\n- X' }, /^$/);

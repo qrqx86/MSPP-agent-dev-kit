@@ -15,7 +15,7 @@ Delegate to **pia-planner** in **project mode** with the brief and the paths of 
 She writes `docs/project/spec.md`, `plan.md`, `tasks.md` (templates in `~/.claude/pp-kit/templates/project/docs/project/`).
 Check her result: every goal covered by a story, the first stories are setup, data model and release pipeline, open questions listed.
 <!-- gate: project-plan-approval -->
-Record "DECISION: Project plan" (`~/.claude/pp-kit/decision.md`) with the summary and the open questions and **wait for approval**.
+Record "DECISION: Project plan" (`~/.claude/pp-kit/decision.md`) with the summary and the open questions, note it together with Pia's new rows in `docs/project/decisions.md` and **wait for approval**.
 Answers to open questions → Pia updates the files.
 
 ## 3. Backlog

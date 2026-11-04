@@ -15,7 +15,7 @@ Story **$ARGUMENTS**. Tracker and its coordinates come from `CLAUDE.md` (Work tr
 - Review Pia's `plan.md` (approach, components, rule IDs, assumptions, risks) and `tasks.md` (each task with **owner agent**, **owned files/components** without overlap, dependencies), consistent with `docs/project/plan.md` if present.
 - Consistency check: every acceptance criterion is covered by at least one task and one test by Tessa; no file assigned to two agents; every task cites its rules. Gaps go back to Pia before continuing.
 <!-- gate: plan-approval -->
-- Record the plan as "DECISION: Plan story $ARGUMENTS" (`~/.claude/pp-kit/decision.md`), update `decisions.md` and **wait for approval** (status Approved, or explicit answer in chat → update the DECISION).
+- Record the plan as "DECISION: Plan story $ARGUMENTS" (`~/.claude/pp-kit/decision.md`), update `decisions.md` and `docs/project/decisions.md` (with Pia's new rows) and **wait for approval** (status Approved, or explicit answer in chat → update the DECISION).
 
 ## 3. Implementation
 Delegate the tasks of `tasks.md` in dependency order (data model → security → front end/back office/flows → pro-code). Pass each agent: story ID, task, owned files. Independent tasks with disjoint files may run in parallel.

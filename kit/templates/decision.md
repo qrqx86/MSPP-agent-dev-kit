@@ -11,7 +11,7 @@ States: **Open → Approved / Rejected**. Every write asks for confirmation (hoo
    - Assigned to: the person who decides
    - Description (HTML): Context · Options with pros/cons · Recommendation · Rule IDs
 2. Link it to the user story as **child** (`System.LinkTypes.Hierarchy-Reverse` from the Task to the story).
-3. Add the row to `docs/stories/<storyId>/decisions.md` (status Open).
+3. Add the row to `docs/stories/<storyId>/decisions.md` and to the project register `docs/project/decisions.md` (status Open).
 
 ### List the open decisions of a story
 WIQL query through the MCP server:
@@ -37,12 +37,16 @@ gh issue create --title "DECISION: <short question>" --label decision --assignee
 1. ... (pros/cons)
 ## Recommendation
 ...
+## Project-level decisions
+Decisions not tied to a story (e.g. "DECISION: Project plan") have no parent story: create them without the link and
+record them only in `docs/project/decisions.md` (Story column `–`).
+
 ## Rules
 <rule IDs>"
 ```
 If the repository uses sub-issues, also add it as a sub-issue of the story. Create the labels once:
 `gh label create decision`, `gh label create approved`, `gh label create rejected`.
-Then add the row to `docs/stories/<storyId>/decisions.md` (status Open).
+Then add the row to `docs/stories/<storyId>/decisions.md` and to the project register `docs/project/decisions.md` (status Open).
 
 ### List the open decisions of a story
 ```bash
@@ -54,7 +58,8 @@ Approved: `gh issue close <n> --reason completed` + label `approved`; rejected: 
 
 ## Closing after an answer in chat (both trackers)
 Set the state (Approved / Rejected) and add a comment: `Outcome: <option> · decided by <person> · <YYYY-MM-DD>`.
-Update the row in `decisions.md`. For lasting architectural decisions also write an ADR
+Update the row in the story `decisions.md` and in `docs/project/decisions.md`. A decision that replaces an Approved one
+sets the old row to `Superseded by <ref>`. For lasting architectural decisions also write an ADR
 (`docs/adr/NNNN-<title>.md`, template `0000-template.md`) and cite its number in the DECISION.
 
 ## Rules
