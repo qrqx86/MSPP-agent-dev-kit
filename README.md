@@ -1,5 +1,7 @@
 # MSPP-agent-dev-kit – Vibe coding on the Power Platform with Claude Code
 
+Short name in commands, paths and hooks: **pp-kit** (`~/.claude/hooks/pp-kit/`, `<!-- pp-kit:project -->`).
+
 A reusable kit for building Power Platform solutions with Claude Code: 11 specialised subagents, shared team rules,
 a baseline standards skill, workflow skills (`/story`, `/review`, ...), safety hooks and project templates.
 It builds on **all** Microsoft `power-platform-skills` plugins and adds what they do not cover: DEV-only guard rails
@@ -9,8 +11,8 @@ DECISION work items for every approval, and a multi-perspective review gate.
 ## Installation
 Windows (PowerShell), macOS and Linux (bash/zsh) – the same commands:
 ```bash
-git clone https://github.com/qrqx86/pp-kit.git pp-kit
-cd pp-kit
+git clone https://github.com/qrqx86/MSPP-agent-dev-kit.git
+cd MSPP-agent-dev-kit
 node install.cjs --dry-run   # shows what would be copied
 node install.cjs             # installs into ~/.claude (automatic backup of settings.json)
 node install.cjs --uninstall # removes the kit (your other hooks, skills and config.json are preserved)
