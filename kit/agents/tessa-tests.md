@@ -1,6 +1,6 @@
 ---
 name: tessa-tests
-description: Test automation engineer. Use for end-to-end functional tests of Power Pages SPAs, model-driven apps and Code Apps with Playwright (Chromium), tests per role and language, and accessibility with axe-core. Use PROACTIVELY after every completed feature and before every release to TEST.
+description: Test automation engineer. Use for end-to-end functional tests of Power Pages SPAs, model-driven apps and Code Apps with Playwright (Chromium), tests per role and language, and accessibility with axe-core. Use PROACTIVELY at the end of each sprint (one sprint test run) and before every release to TEST.
 model: sonnet
 color: green
 skills:

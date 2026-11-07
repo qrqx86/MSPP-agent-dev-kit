@@ -1,6 +1,6 @@
 ---
 name: sigi-security
-description: Security specialist. Use for Dataverse security roles, business units, teams, column-level security, application users, as well as Power Pages web roles, table permissions and Web API site settings (including SPAs). Use PROACTIVELY after every data model change.
+description: Security specialist. Use for Dataverse security roles, business units, teams, column-level security, application users, as well as Power Pages web roles, table permissions and Web API site settings (including SPAs). Use PROACTIVELY before applying security role changes in DEV and at the end of each sprint (sprint permission check).
 model: opus
 color: red
 skills:

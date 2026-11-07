@@ -10,7 +10,7 @@ Agents never connect to TEST (ALM-01): the release is performed **only by the pi
 <!-- gate: decisions-closed -->
 1. **Decisions**: no open DECISION under the story (tracker from `CLAUDE.md`; compare with `docs/stories/$ARGUMENTS/decisions.md`).
 <!-- gate: quality -->
-2. **Kuno**: `/review $ARGUMENTS`, no confirmed Critical/High finding.
+2. **Kuno**: `/review $ARGUMENTS` in **full** mode (before a release), no confirmed Critical/High finding. If the sprint review already passed on the same code, the full mode on the later diff is enough.
 3. **Tessa**: `/test $ARGUMENTS` on DEV, all tests passed.
 4. **Alma** (DEV only):
    - increase the version, `pac solution export` from DEV, `pac solution unpack` into `solution/<SolutionName>/`;

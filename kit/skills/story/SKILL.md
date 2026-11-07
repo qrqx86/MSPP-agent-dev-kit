@@ -18,10 +18,10 @@ Story **$ARGUMENTS**. Tracker and its coordinates come from `CLAUDE.md` (Work tr
 - Record the plan as "DECISION: Plan story $ARGUMENTS" (`~/.claude/pp-kit/decision.md`), update `decisions.md` and `docs/project/decisions.md` (with Pia's new rows) and **wait for approval** (status Approved, or explicit answer in chat → update the DECISION).
 
 ## 3. Implementation
-Delegate the tasks of `tasks.md` in dependency order (data model → security → front end/back office/flows → pro-code). Pass each agent: story ID, task, owned files and the Approved DECISIONS it relies on (subagents cannot ask the user). Independent tasks with disjoint files may run in parallel.
+Delegate the tasks of `tasks.md` in dependency order (data model → security → front end/back office/flows → pro-code). Pass each agent: story ID, task, owned files and the Approved DECISIONS it relies on (subagents cannot ask the user). Independent tasks with disjoint files may run in parallel. One agent per **work block**, not per single task; small changes (documentation, tracker comments, merges, fixes ≤ ~50 lines without security roles) are done by the main session without agents.
 
-## 4. Quality
-Run `/review $ARGUMENTS` and `/test $ARGUMENTS`. Fix confirmed Critical/High findings by delegating to the owner agent.
+## 4. Quality (at the end of the sprint)
+No intermediate review or test per story or per merge. When all stories of the sprint are built: `/review <sprint>` and `/test <sprint>` in parallel with Sigi (permissions). A single fix pass per owner agent; Medium/Low findings are collected in `docs/stories/<sprint>/reviews/to-fix.md`. Immediate exceptions: Sigi before applying security roles; Kuno before a release to TEST/PROD.
 
 ## 5. Closing
 Update the story status and `tasks.md`; link the commits with the story reference (`AB#$ARGUMENTS` or `#$ARGUMENTS`). With a pull request flow, open the PR referencing the story.

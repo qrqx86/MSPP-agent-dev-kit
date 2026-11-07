@@ -1,10 +1,14 @@
 ---
 name: review
-description: Quality gate with Kuno - automated checks, parallel review by perspective (security, standards compliance, data protection, code quality) and verification of Critical/High findings.
-argument-hint: [Story-ID]
+description: Quality gate with Kuno at the end of the sprint - a single review (automated checks and perspectives security, standards compliance, data protection, code quality) and verification of Critical/High findings; full parallel mode for large diffs, security or releases.
+argument-hint: [Story-ID | sprint]
 ---
 Review of the changes against the base branch (`git diff $(git merge-base HEAD origin/HEAD)` – fallback `origin/main` or `origin/master` – plus uncommitted changes). Story: $ARGUMENTS
 Output folder: `docs/stories/$ARGUMENTS/reviews/` (without a story: `docs/reviews/<date>/`).
+
+## Modes
+- **Sprint (default):** a single **kuno-quality** instance in `sprint` mode on the sprint diff (automated checks and all perspectives). Save in `reviews/outcome.md`. For each Critical/High finding: fix, then one instance in `verify` mode. Go to Step 4.
+- **Full (Steps 1–4):** only if the diff exceeds ~2,000 lines, touches roles/permissions or precedes a release to TEST/PROD.
 
 ## Step 1 – Automated checks
 Delegate to **kuno-quality** with perspective `automated`. Save the result in `reviews/automated.md`.

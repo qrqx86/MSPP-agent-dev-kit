@@ -95,7 +95,7 @@ The evals run the agents **installed** in `~/.claude` (install first), headless 
    Pia only writes the planning files and adds rows to the project decision register `docs/project/decisions.md`:
    she never approves, creates work items or delegates (subagents cannot); the main session updates the register states.
 4. `/data-model` – Dora proposes, Sigi derives roles and permissions, approval, creation.
-5. `/review` – automated checks → Kuno in parallel on 4 perspectives → verification of every Critical/High finding.
+5. `/review` – at the end of the sprint: a single Kuno instance (`sprint` mode: automated checks and all perspectives) → verification of the fixed Critical/High findings; full mode (4 perspectives in parallel) only for large diffs, roles/permissions or before a release.
 6. `/test` – Tessa with Playwright on DEV.
 7. `/deploy-test` – quality gate, then Alma and the release pipeline to TEST.
 

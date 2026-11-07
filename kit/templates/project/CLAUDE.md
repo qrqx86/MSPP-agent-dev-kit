@@ -52,6 +52,16 @@ One repository and one solution per type; only the types the project needs.
 - Everything goes through solutions: nothing in the Default solution. Changes made in DEV (also via MCP) are
   brought back to the solution source (ALM-03).
 - Missing information is reported as an assumption, never invented.
+- Sprint rhythm (efficiency): sprint plan with Pia → build the whole sprint, one agent per **work block** and no
+  intermediate review → a single verification round at the end of the sprint in parallel (Tessa `/test <sprint>`,
+  Sigi permissions, Kuno `/review <sprint>`) → a single fix pass → story closing with Pia.
+- Exceptions with an immediate check: Sigi before applying security role changes in DEV; Kuno before every release
+  to TEST/PROD; irreversible operations never without a DECISION.
+- Without agents (main session): targeted documentation changes, tracker comments and states, `decisions.md`, merge and
+  push, small fixes (≤ ~50 lines, no security roles), descriptions and texts. Routine exports with Alma on `model: sonnet`.
+- Agent assignments: exact files and commands and a done criterion; short report (≤ 40 lines); Medium/Low findings in
+  `docs/stories/<sprint>/reviews/to-fix.md`; no `npm ci` in a new worktree when an identical `node_modules` exists.
+- DECISION only for alternatives not covered by the approved plan, deviations and risky assumptions; one tracker comment per story at the end of the sprint.
 
 ## Tools (binding)
 - PAC CLI, Dataverse CLI (`dataverse`), Power Apps CLI (`pa`); no manual changes in the maker portal.
@@ -89,6 +99,7 @@ One repository and one solution per type; only the types the project needs.
 - Solution exported, unpacked and versioned in the repository.
 - Names compliant with the naming rules (checked by Kuno).
 - Security roles checked by Sigi.
-- Kuno review without open critical findings, Tessa tests passed.
+- Kuno **sprint** review without open Critical/High findings, Tessa sprint tests passed;
+  Low findings tracked in `to-fix.md` do not block Done.
 - No open DECISION for the story.
 - No secrets in the repository; environment variables and connection references used.

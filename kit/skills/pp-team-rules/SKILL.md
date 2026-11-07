@@ -87,3 +87,12 @@ Never declare checks that were not run.
 - No manual changes in the maker portal; no component in the Default solution.
 - No secrets in the repository (secret-scan hook active): environment variables, Key Vault, pipeline secrets.
 - No real personal data in logs, tests or examples.
+
+## 10. Efficiency
+- **Rhythm:** sprint plan → build the whole sprint → a single round of tests (Tessa), permissions (Sigi) and review (Kuno, `sprint` mode) → a single fix pass → story closing. No review on every merge.
+- **Immediate exceptions:** Sigi before applying security roles in DEV; Kuno before every release to TEST/PROD.
+- **Assignment:** work only on the files and commands named in the brief; don't explore the repository beyond what is needed; stop at the done criterion.
+- **Short report** (≤ 40 lines plus the §7 sections): outcome, checks run with their result, deviations, files changed. Don't repeat the brief; don't resend the same report.
+- **Medium/Low findings** are not fixed right away: list them; they are closed in the end-of-sprint fix pass.
+- **Workspace:** reuse the existing worktree and `node_modules`; no `npm ci` in a new worktree when an identical install exists (link it). Vitest with `--maxWorkers=2`.
+- **Governance:** technical choices covered by the approved plan need no DECISION: note them in the result. One tracker comment per story at the end of the sprint, not one per step.
