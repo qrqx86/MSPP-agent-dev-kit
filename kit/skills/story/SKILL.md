@@ -19,6 +19,8 @@ Story **$ARGUMENTS**. Tracker and its coordinates come from `CLAUDE.md` (Work tr
 
 ## 3. Implementation
 Delegate the tasks of `tasks.md` in dependency order (data model → security → front end/back office/flows → pro-code). Pass each agent: story ID, task, owned files and the Approved DECISIONS it relies on (subagents cannot ask the user). Independent tasks with disjoint files may run in parallel. One agent per **work block**, not per single task; small changes (documentation, tracker comments, merges, fixes ≤ ~50 lines without security roles) are done by the main session without agents.
+Brief with exact files, exact commands, done criterion and tool-call budget (pp-team-rules §10). If the files are not known, first a cheap read-only search (`Explore` agent with `model: haiku`, answer only `path:line`), then the specialist: the specialist does not explore the repository on its own.
+An agent's absence claims ("no findings", "section missing", "unchanged", "no match") are checked with **one** targeted check by the main session before acting or closing.
 
 ## 4. Quality (at the end of the sprint)
 No intermediate review or test per story or per merge. When all stories of the sprint are built: `/review <sprint>` and `/test <sprint>` in parallel with Sigi (permissions). A single fix pass per owner agent; Medium/Low findings are collected in `docs/stories/<sprint>/reviews/to-fix.md`. Immediate exceptions: Sigi before applying security roles; Kuno before a release to TEST/PROD.

@@ -72,7 +72,7 @@ The evals run the agents **installed** in `~/.claude` (install first), headless 
 | Agent | Model | Delegates to (Microsoft skills) |
 |---|---|---|
 | Pia (planner) | opus | – (writes spec.md, plan.md, tasks.md; builds nothing) |
-| Alma (ALM) | opus | dataverse:dv-solution, power-pages:plan-alm/setup-pipeline/deploy-pipeline/export/import |
+| Alma (ALM) | sonnet (opus on request) | dataverse:dv-solution, power-pages:plan-alm/setup-pipeline/deploy-pipeline/export/import |
 | Dora (Dataverse) | opus | dataverse:dv-metadata, power-pages:setup-datamodel |
 | Sigi (security) | opus | dataverse:dv-security, power-pages:create-webroles/table-permissions/audit-permissions |
 | Cody (Code Apps) | sonnet | code-apps-preview:* (`pa` CLI) |

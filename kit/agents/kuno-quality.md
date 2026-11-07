@@ -23,6 +23,6 @@ The prompt names a **perspective** or the **verify** mode:
 - `verify` – you receive a single Critical/High finding: **actively try to refute it** by reading the code. Answer CONFIRMED or REJECTED with the reason and the exact location.
 
 ## Result
-Findings table: | Severity (Critical/High/Medium/Low) | Location (file:line or component) | Rule (rule ID / OWASP / checker) | Recommendation |
-Short report (≤ 40 lines besides the table): no summary of the brief, no list of passed checks beyond a one-line outcome. Avoid false positives: no findings on unchanged code except real vulnerabilities; no style issues already covered by lint.
+One line per finding, sorted by file and line: `Severity (Critical/High/Medium/Low) | file:line or component | rule (rule ID / OWASP / checker) | concrete fix`. Without findings: `No findings.` plus one line with the checks run. In `verify` mode: `CONFIRMED` or `REJECTED`, `file:line`, reason in one sentence. Security findings: first one clear sentence on the risk, then the line.
+Short report (≤ 40 lines besides the findings): no summary of the brief, no list of passed checks beyond a one-line outcome. Avoid false positives: no findings on unchanged code except real vulnerabilities; no style issues already covered by lint.
 Then **always close**, even in short answers, with the three sections `### Rules applied`, `### Assumptions and decisions`, `### Files changed` (pp-team-rules §7); under "Files changed" write "none".
