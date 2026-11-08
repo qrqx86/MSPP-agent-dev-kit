@@ -29,6 +29,9 @@ Input: the brief from the orchestrator, existing documents in the repository, th
    components per type with the specialist agent, data model outline (main tables, reuse of `contact`/`account`, DV-01),
    security outline (internal roles, web roles), integrations, ALM (solutions, pipelines, DEV only, ALM-01),
    rule IDs that shape the design, assumptions, risks, the decisions the sponsor must take.
+   Fill in **"Verified facts (day 0)"** (tracker process and state categories, `doctor.cjs` result if the orchestrator
+   provides it) and **"Conventions to fix before the first sprint"**: for every domain field the spec does not define,
+   ask "free text or coded list?" as an open question.
 3. `tasks.md`: the **initial backlog** as proposed user stories in delivery order, each with title, "as a … I want …",
    2–5 acceptance criteria, owner agents, dependencies, rule IDs. The first stories are always: project setup (Alma),
    data model (Dora + Sigi), release pipeline (Alma). No story larger than one sprint.
@@ -37,7 +40,10 @@ Input: the brief from the orchestrator, existing documents in the repository, th
 Input: the story ID (tracker from `CLAUDE.md`); the orchestrator passes the story text if you cannot load it.
 1. `spec.md`: description, acceptance criteria (one row each, with the planned Tessa test file), out of scope, relevant rules.
 2. Analyse what exists: `docs/project/decisions.md` (Approved decisions are binding, rejected options are not proposed again), `docs/project/plan.md`, `docs/data-model.md`, `docs/security.md`, solution source, other stories.
-3. `plan.md`: approach, components (new/changed, agent), rule IDs with how they are met, assumptions, risks.
+3. `plan.md`: first the **Verified facts** (mandatory: read-only checks in DEV and in the repositories of what the plan
+   relies on, e.g. tables, rows, roles of the product owner, tracker states; a fact that cannot be verified becomes an assumption), then the
+   **Sprint authorizations** (pushes to DEV with green gates, cleanup of test data with the sprint prefix),
+   then approach, components (new/changed, agent), rule IDs with how they are met, assumptions, risks.
 4. `tasks.md`: each task with **one owner agent**, **owned files/components**, dependencies, rule IDs, state `to do`.
    Order: data model (Dora) → security (Sigi) → front end / back office / flows (Paula, Cody, Moritz, Flo) → pro-code (Peppi)
    → tests (Tessa); ALM tasks (Alma) where solution or pipeline changes are needed.
@@ -48,6 +54,12 @@ Input: the story ID (tracker from `CLAUDE.md`); the orchestrator passes the stor
 - Pro-code only with a reason (PC-01); no step touches an environment other than DEV (ALM-01).
 - The plan cites the relevant decisions of the register and contradicts no Approved one; to revisit one, propose a new DECISION that supersedes it.
 - Missing information is an assumption or an open question, never invented.
+- Story mode: the "Verified facts" section is not empty and the "Sprint authorizations" are filled in.
+
+## Closing stories (when the orchestrator asks)
+A story goes to Done if the team's work is complete, reviewed and tested. A check blocked by external people or teams
+does not block it: propose a linked follow-up story. Only the story whose purpose is exactly that check stays open.
+Return a table `Story | Outcome (Done / open) | Reason | Proposed follow-up`.
 Fix the gaps before returning.
 
 ## Result

@@ -1,16 +1,27 @@
 #!/usr/bin/env node
-// PreToolUse (Write|Edit|MultiEdit|NotebookEdit): block content that looks like a secret.
+// PreToolUse (Write|Edit|MultiEdit|NotebookEdit): block content that looks like a secret, and writes of a
+// subagent outside the paths allowed to it (config agentWritePaths, e.g. the reviewer only in reviews/).
 'use strict';
+const path = require('path');
 const { readInput, loadConfig, toRegex, msg, block } = require('./lib.cjs');
 
 const input = readInput();
 const ti = input.tool_input || {};
 const file = String(ti.file_path || ti.notebook_path || '');
+const cfg = loadConfig();
+
+// Path limits per subagent (agent_type is set by Claude Code when a subagent calls the tool).
+const agent = String(input.agent_type || '');
+const limits = (cfg.agentWritePaths || {})[agent];
+if (agent && Array.isArray(limits)) {
+  const norm = path.normalize(file).replace(/\\/g, '/');
+  if (!file || !limits.map(toRegex).some((r) => r.test(norm))) block(msg('agentWritePath', { agent, file: file || '-' }));
+}
+
 const parts = [ti.content, ti.new_string, ti.new_source, ...((ti.edits || []).map((e) => e && e.new_string))];
 const text = parts.filter((p) => typeof p === 'string').join('\n');
 if (!text) process.exit(0);
 
-const cfg = loadConfig();
 if (cfg.secretAllowFiles.map(toRegex).some((r) => r.test(file.replace(/\\/g, '/')))) process.exit(0);
 
 // Values that are clearly not secrets: placeholders, references to secret stores, variables, test values.

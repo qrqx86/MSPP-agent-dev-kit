@@ -64,9 +64,43 @@ One repository and one solution per type; only the types the project needs.
   `docs/stories/<sprint>/reviews/to-fix.md`; no `npm ci` in a new worktree when an identical `node_modules` exists.
 - DECISION only for alternatives not covered by the approved plan, deviations and risky assumptions; one tracker comment per story at the end of the sprint.
 
+## Agent operating rules
+- Workstation: `node ~/.claude/hooks/pp-kit/doctor.cjs` on day 0 and at the start of every sprint (CLIs, logins to DEV,
+  clone outside OneDrive, `core.longpaths`, RAM). The product owner renews expired logins.
+- Clones and worktrees, in short folders outside OneDrive:
+
+  | Repository | Clone | Active worktrees |
+  |---|---|---|
+  | `<project> - Core` | `C:\r\<repo>` | – |
+
+  Agent worktrees in `C:\t\wt-<sprint>`, `node_modules` linked with a junction (known issues in `pp-team-rules`).
+- Existing scripts, to use instead of rewriting them (update with every new script):
+
+  | Script | Repository | Use |
+  |---|---|---|
+  | `~/.claude/hooks/pp-kit/pp.cjs` | kit | main session: `commit`, `task`, `decisions open/close`, `ado comment/state`, `stats` (one result line) |
+  | `~/.claude/hooks/pp-kit/doctor.cjs` | kit | workstation and login check |
+  | `tools/verify.cjs`, `tools/worktree.cjs`, `tools/merge-locales.cjs` | frontend | gates in 3–5 lines, worktrees with junctions, merge of resource files (template `templates/frontend/`) |
+  | `<scripts/...>` | `<repo>` | <use> |
+
+- **Agent assignment:** only the task, owned files, story references (`spec.md`, `plan.md`, `tasks.md`), check commands,
+  done criterion and budget. Commit rules, prohibitions, known issues and the report format live in `pp-team-rules`: do not repeat them.
+- **Agent prohibitions:** DEV only; no writes to the tracker (the main session does them); pushes to DEV
+  (`pa app push`, `pac pages upload-code-site`) only with the sprint authorization (`plan.md`, § Sprint authorizations).
+- **Organization (tokens first, then speed):**
+  - one agent per specialist and sprint, resumed block by block with `SendMessage` instead of starting a new one;
+  - one agent at a time runs builds and tests in the same repository; Tessa starts when the developer is done;
+  - in parallel only agents on different repositories;
+  - several stories in one assignment only if they touch the same files;
+  - separate branches only when really needed (e.g. `main` blocked); a second developer in parallel only if the product owner asks to shorten the time.
+- After every push to DEV: export the solution into the repository and tell the product owner "reload the app page" with 3–4 points to try (5–10 minutes).
+
 ## Tools (binding)
 - PAC CLI, Dataverse CLI (`dataverse`), Power Apps CLI (`pa`); no manual changes in the maker portal.
-- Project MCP servers (`.mcp.json`): `dataverse` (DEV only), `azure-devops` (only with that tracker).
+- Project MCP servers (`.mcp.json`): `dataverse` (DEV only), `azure-devops` (only with that tracker; targeted reads with the needed `fields` only).
+- Repetitive writes to the tracker and the registers (comments, states, closing decisions, task states, commits):
+  `node ~/.claude/hooks/pp-kit/pp.cjs …` instead of the MCP server, which returns the whole work item every time.
+  `--dry-run` shows what it would do; Azure DevOps writes ask for confirmation (hook).
 - Microsoft Power Platform skills (all plugins of the power-platform-skills marketplace).
 - Team working rules: skill `pp-team-rules` (preloaded by the agents).
 - Work only on a user story with an ID; branch `feature/<ID>-<slug>`.
@@ -78,6 +112,9 @@ One repository and one solution per type; only the types the project needs.
 - Description: context, options with pros/cons, recommendation, rule IDs.
 - Wait for status Approved before proceeding on that point.
 - If the user answers in chat, record answer, person and date in the DECISION and set its state.
+- Open decisions are shown to the product owner as a table (ID, question, options, recommendation): they answer by ID ("1608–1614 A, 1616 C").
+- A decision is closed only with an **explicit** answer that contains the approval and the ID or the option. Phrases like
+  "don't block" or "ok go" with several open decisions are not an approval: ask which IDs. The verbatim answer goes into the outcome comment.
 
 ## Approved deviations
 - <rule ID> – <deviation, who approved it, date>
@@ -103,4 +140,6 @@ One repository and one solution per type; only the types the project needs.
 - Kuno **sprint** review without open Critical/High findings, Tessa sprint tests passed;
   Low findings tracked in `to-fix.md` do not block Done.
 - No open DECISION for the story.
+- A check blocked by external people or teams does not block Done if the team's work is complete, reviewed and tested:
+  it becomes a linked follow-up story. The story whose purpose is exactly that check stays open.
 - No secrets in the repository; environment variables and connection references used.

@@ -54,7 +54,8 @@
     { "match": "\\bgh\\s+workflow\\s+run\\b", "reason": "starting a GitHub Actions workflow" },
     { "match": "\\bgh\\s+issue\\s+(create|close|edit|delete|comment)\\b", "reason": "changing a GitHub issue" },
     { "match": "\\bpa\\s+app\\s+push\\b", "reason": "publishing a Code App" },
-    { "match": "\\bpac\\s+(pcf|plugin)\\s+push\\b", "reason": "publishing a pro-code component" }
+    { "match": "\\bpac\\s+(pcf|plugin)\\s+push\\b", "reason": "publishing a pro-code component" },
+    { "match": "^(?!.*--dry-run)node(\\.exe)?\\s+.*\\bpp\\.cjs['\"]?\\s+(ado\\b|decisions\\s+close\\b.*--ado\\b)", "reason": "write to Azure DevOps with pp (comment or state of a work item)" }
   ],
   "solutionRequired": [
     { "match": "\\bpac\\s+pcf\\s+push\\b", "require": "--solution-unique-name\\b", "hint": "--solution-unique-name <SolutionName>" },
@@ -76,5 +77,146 @@
   "secretAllowFiles": [
     "\\.example(\\.[a-z]+)?$",
     "config\\.default\\.json$"
-  ]
+  ],
+
+  "_mcpWriteAllowServers": "MCP servers (name in mcp__<server>__<tool>) whose writes need no confirmation; the environment checks stay active. E.g. in config.json: [\"azure-devops\"].",
+  "mcpWriteAllowServers": [],
+  "doctorTools": [
+    {
+      "name": "git",
+      "cmd": "git",
+      "args": [
+        "--version"
+      ],
+      "required": true,
+      "hint": "https://git-scm.com"
+    },
+    {
+      "name": "pac",
+      "cmd": "pac",
+      "args": [
+        "help"
+      ],
+      "required": true,
+      "hint": "dotnet tool install --global Microsoft.PowerApps.CLI.Tool"
+    },
+    {
+      "name": "dataverse",
+      "cmd": "dataverse",
+      "args": [
+        "--help"
+      ],
+      "required": true,
+      "hint": "npm install -g @microsoft/dataverse"
+    },
+    {
+      "name": "pa",
+      "cmd": "pa",
+      "args": [
+        "--version"
+      ],
+      "required": false,
+      "hint": "npm install -g @microsoft/power-apps-cli (Code Apps only)"
+    },
+    {
+      "name": "az",
+      "cmd": "az",
+      "args": [
+        "version"
+      ],
+      "required": false,
+      "hint": "winget install Microsoft.AzureCLI (token for Azure DevOps and the Web API)"
+    },
+    {
+      "name": "gh",
+      "cmd": "gh",
+      "args": [
+        "--version"
+      ],
+      "required": false,
+      "hint": "winget install GitHub.cli (GitHub tracker only)"
+    },
+    {
+      "name": "pwsh",
+      "cmd": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-Command",
+        "$PSVersionTable.PSVersion.ToString()"
+      ],
+      "required": false,
+      "hint": "winget install Microsoft.PowerShell"
+    },
+    {
+      "name": "Pester",
+      "cmd": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-Command",
+        "\"(Get-Module -ListAvailable Pester | Sort-Object Version -Descending | Select-Object -First 1).Version.ToString()\""
+      ],
+      "required": false,
+      "hint": "Install-Module Pester -Scope CurrentUser"
+    }
+  ],
+  "doctorLogins": [
+    {
+      "name": "pac auth",
+      "cmd": "pac",
+      "args": [
+        "auth",
+        "list"
+      ],
+      "required": true,
+      "devCheck": true,
+      "hint": "pac auth create --name <DEV profile> --environment https://{dev}"
+    },
+    {
+      "name": "dataverse auth",
+      "cmd": "dataverse",
+      "args": [
+        "auth",
+        "list"
+      ],
+      "required": false,
+      "devCheck": true,
+      "hint": "dataverse auth create --environment https://{dev} --name <DEV profile>"
+    },
+    {
+      "name": "az",
+      "cmd": "az",
+      "args": [
+        "account",
+        "show",
+        "--output",
+        "none"
+      ],
+      "required": false,
+      "hint": "az login"
+    }
+  ],
+  "doctorMaxRepoPath": 80,
+  "doctorMinRamGb": 16,
+  "doctorMinFreeRamGb": 4,
+  "agentWritePaths": {
+    "kuno-quality": [
+      "/docs/stories/[^/]+/reviews/[^/]+\\.md$",
+      "/docs/reviews/[^/]+/[^/]+\\.md$"
+    ]
+  },
+  "taskStates": [
+    "to do",
+    "in progress",
+    "done",
+    "blocked"
+  ],
+  "decisionStates": {
+    "approved": "Approved",
+    "rejected": "Rejected"
+  },
+  "decisionOutcomeHeaderPattern": "^Outcome",
+  "approvalPattern": "\\bapprov",
+  "approvalAllPattern": "\\b(all|every)\\b",
+  "adoOrgPattern": "Azure DevOps:\\s*organization\\s+([^|\\s]+)",
+  "adoProjectPattern": "Azure DevOps:[^|\\n]*\\|\\s*project\\s+([^(\\r\\n]+?)\\s*(?:\\(|\\r?\\n|$)"
 }

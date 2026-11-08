@@ -143,6 +143,18 @@ ASK('FlowAgent set_current_env DEV GUID asks', 'pre-mcp.cjs', mcp('mcp__plugin_p
 ALLOW('FlowAgent list_flows on DEV allowed', 'pre-mcp.cjs', mcp('mcp__plugin_power-automate_flowagent__list_flows', { environmentId: DEVID }, proj2));
 ALLOW('MCP GitHub URL argument not mistaken for an environment', 'pre-mcp.cjs', mcp('mcp__github__get_issue', { url: 'https://github.com/x/y/issues/1' }, proj2));
 
+// --- pre-write: paths allowed to a subagent (agentWritePaths: the reviewer only in reviews/) ---
+{
+  const kw = (file, extra = {}) => ({ tool_name: 'Write', cwd: proj, agent_type: 'kuno-quality', ...extra, tool_input: { file_path: path.join(proj, ...file.split('/')), content: 'Nessun rilievo.' } });
+  ALLOW('reviewer writes its findings in docs/stories/<ID>/reviews/', 'pre-write.cjs', kw('docs/stories/S12/reviews/esito.md'));
+  ALLOW('reviewer writes in docs/reviews/<date>/', 'pre-write.cjs', kw('docs/reviews/2026-11-08/esito.md'));
+  BLOCK('reviewer cannot write source code', 'pre-write.cjs', kw('src/app.ts'));
+  BLOCK('reviewer cannot escape reviews/ with ..', 'pre-write.cjs', kw('docs/stories/S12/reviews/../../../src/app.md'));
+  BLOCK('reviewer cannot write other files of the story', 'pre-write.cjs', kw('docs/stories/S12/plan.md'));
+  ALLOW('other agents are not limited by the reviewer paths', 'pre-write.cjs', kw('src/app.ts', { agent_type: 'cody-codeapps' }));
+  ALLOW('main session (no agent_type) not limited', 'pre-write.cjs', kw('src/app.ts', { agent_type: undefined }));
+}
+
 // --- pre-write: secrets ------------------------------------------------------------
 BLOCK('connection string with secret blocked', 'pre-write.cjs', wr(S('const c = "AuthType=ClientSecret;Url=https://x;ClientId=1;Client', 'Secret=AbCdEf123456";')));
 BLOCK('assigned password blocked', 'pre-write.cjs', wr(S('const pass', 'word = "Sup3rS3cret!";')));
@@ -213,7 +225,101 @@ fs.writeFileSync(path.join(HOOKS, 'config.json'), '{ "prodPatterns": ["("] }');
 BLOCK('invalid regex in config.json fails closed', 'pre-shell.cjs', shx('git status'));
 fs.writeFileSync(path.join(HOOKS, 'config.json'), '{ "nonDevPatterns": ["\\\\bcontoso-acc\\\\b"] }');
 BLOCK('team pattern from config.json applied', 'pre-shell.cjs', shx('pac solution list --environment https://contoso-acc.crm4.dynamics.com'));
+fs.writeFileSync(path.join(HOOKS, 'config.json'), '{ "mcpWriteAllowServers": ["azure-devops"] }');
+ALLOW('MCP write on allowed server needs no confirmation', 'pre-mcp.cjs', mcp('mcp__azure-devops__wit_add_work_item_comment', { id: 1, text: 'x' }));
+ASK('MCP write on other server still asks', 'pre-mcp.cjs', mcp('mcp__dataverse__create_record', { table: 'account' }));
+BLOCK('allowed server still blocked on PROD', 'pre-mcp.cjs', mcp('mcp__azure-devops__wit_create_work_item', { env: 'https://a-prod.crm4.dynamics.com' }));
 fs.rmSync(path.join(HOOKS, 'config.json'));
+
+// --- pp.cjs (one-line commands of the main session) -------------------------------------
+{
+  const CFG = JSON.parse(fs.readFileSync(path.join(HOOKS, 'config.default.json'), 'utf8'));
+  const repo = path.join(tmp, 'pp');
+  fs.mkdirSync(path.join(repo, 'docs', 'project'), { recursive: true });
+  fs.mkdirSync(path.join(repo, 'docs', 'stories', 'S1'), { recursive: true });
+  fs.writeFileSync(path.join(repo, 'CLAUDE.md'), `# P\n${E.marker}\n`);
+  const [todo, , done] = CFG.taskStates;
+  fs.writeFileSync(path.join(repo, 'docs', 'stories', 'S1', 'tasks.md'), `| # | Task | State |\n|---|---|---|\n| B5 | a | b \\| c | ${todo} |\n| B6 | x | ${todo} |\n`);
+  const reg = path.join(repo, 'docs', 'project', E.projectDecisionsFile);
+  fs.writeFileSync(reg, `| Task | Date | Story | Decision | State | ADR |\n|---|---|---|---|---|---|\n| AB#1608 | 2026-11-08 | 1037 | x | ${E.openState} | – |\n| AB#1609 | 2026-11-08 | 1608 | y | ${E.openState} | – |\n| AB#11 | 2026-11-08 | – | z | ${E.openState} | – |\n`);
+  const g = (...a) => spawnSync('git', a, { cwd: repo, encoding: 'utf8' });
+  g('init', '-q'); g('config', 'user.email', 't@example.com'); g('config', 'user.name', 'T'); g('config', 'commit.gpgsign', 'false');
+  const pp = (...a) => spawnSync(process.execPath, [path.join(HOOKS, 'pp.cjs'), ...a], { cwd: repo, encoding: 'utf8', env: { ...process.env, ADO_TOKEN: '' } });
+
+  let r = pp('task', 'S1', 'B5', done, '--note', 'Mon 3a1b002');
+  const tasks = fs.readFileSync(path.join(repo, 'docs', 'stories', 'S1', 'tasks.md'), 'utf8');
+  report('pp task sets the state of the row only', r.status === 0 && tasks.includes(`| B5 | a | b \\| c | ${done} |`) && new RegExp(`\\| B6 \\| x \\| ${todo} \\|`).test(tasks) && tasks.includes('B5: Mon 3a1b002'), r);
+  r = pp('task', 'S1', 'B5', 'not-a-state');
+  report('pp task rejects an unknown state', r.status === 1, r);
+
+  r = pp('decisions', 'open');
+  report('pp decisions open lists the open rows', r.status === 0 && /AB#1608/.test(r.stdout) && /AB#1609/.test(r.stdout), r);
+  r = pp('decisions', 'close', '1608=A', '--by', 'PO', '--quote', 'ok, go ahead');
+  report('pp decisions close refuses an answer without explicit approval', r.status === 1 && /AB#1608[^\n]*\| [^|]*\| /.test(fs.readFileSync(reg, 'utf8')) && fs.readFileSync(reg, 'utf8').includes(`| x | ${E.openState} |`), r);
+  r = pp('decisions', 'close', '1608=A', '1609=B', '--by', 'PO', '--quote', 'approve 1608 A');
+  report('pp decisions close refuses a decision the answer does not name', r.status === 1 && fs.readFileSync(reg, 'utf8').includes(`| y | ${E.openState} |`), r);
+  r = pp('decisions', 'close', '1608-1609=A', '--reject', '1609', '--by', 'PO', '--quote', 'approve 1608 A');
+  report('pp decisions close refuses an ID approved and rejected together', r.status === 1 && fs.readFileSync(reg, 'utf8').includes(`| x | ${E.openState} |`), r);
+  r = pp('decisions', 'close', '1608-1609=A', '--by', 'PO', '--quote', 'approve 1608-1609 A');
+  const regTxt = fs.readFileSync(reg, 'utf8');
+  report('pp decisions close updates the register by ID (range)', r.status === 0 && regTxt.includes(`| x | ${E.approvedState} |`) && regTxt.includes(`| y | ${E.approvedState} |`) && regTxt.includes(`| z | ${E.openState} |`) && /approve 1608-1609 A/.test(r.stdout), r);
+
+  fs.writeFileSync(path.join(repo, 'a.txt'), 'a');
+  r = pp('commit', 'docs: a', '--files', 'a.txt');
+  report('pp commit refuses without a story reference', r.status === 1, r);
+  r = pp('commit', 'docs: a', '--ab', '1241', '--checks', 'none', '--files', 'a.txt');
+  const log = g('log', '-1', '--format=%B').stdout;
+  report('pp commit adds the reference, AI and checks lines', r.status === 0 && /^docs: a AB#1241/.test(log) && /^AI[\w-]*: Claude Code$/m.test(log) && /: none$/m.test(log), r);
+  report('pp commit commits only the given files', r.status === 0 && /\?\? docs\//.test(g('status', '--porcelain').stdout), r);
+
+  const ppCmd = `node "C:/Users/Some One/.claude/hooks/pp-kit/pp.cjs"`;
+  ASK('pp ado write asks for confirmation', 'pre-shell.cjs', shx(`${ppCmd} ado comment 1234 --text "x"`));
+  ASK('pp decisions close --ado asks for confirmation', 'pre-shell.cjs', shx(`${ppCmd} decisions close 1608=A --by PO --quote "approve 1608" --ado`));
+  ALLOW('pp ado --dry-run does not ask', 'pre-shell.cjs', shx(`${ppCmd} ado comment 1234 --dry-run --text "x"`));
+  ALLOW('pp decisions close without --ado does not ask', 'pre-shell.cjs', shx(`${ppCmd} decisions close 1608=A --by PO --quote "approve 1608"`));
+
+  // stats on a tiny transcript
+  const tr = path.join(tmp, 't.jsonl');
+  const L = (o) => JSON.stringify(o);
+  fs.writeFileSync(tr, [
+    L({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 'u1', name: 'Agent', input: { subagent_type: 'cody-codeapps', prompt: 'x' } }] } }),
+    L({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 'u2', name: 'mcp__azure-devops__wit_work_item_write', input: {} }] } }),
+    L({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'u2', content: 'x'.repeat(4000) }] } }),
+    L({ type: 'user', message: { content: '<task-notification><tool-use-id>u1</tool-use-id><usage><subagent_tokens>250000</subagent_tokens></usage></task-notification>' } }),
+    L({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 'u3', name: 'Bash', input: { command: 'git commit -m "x AB#1"' } }] } }),
+  ].join('\n'));
+  r = pp('stats', tr);
+  report('pp stats counts agents with tokens, MCP response size and commits', r.status === 0 && /cody-codeapps\s+1\s+250k/.test(r.stdout) && /wit_work_item_write\s+1\s+~\s*1k/.test(r.stdout) && /\b1 commit/.test(r.stdout), r);
+}
+
+// --- doctor.cjs (workstation check, run by hand) --------------------------------------
+{
+  const say = (text) => ({ cmd: 'node', args: ['-e', `"console.log('${text}')"`] });
+  const doctor = (conf, cwd, ...args) => {
+    fs.writeFileSync(path.join(HOOKS, 'config.json'), JSON.stringify(conf));
+    const r = spawnSync(process.execPath, [path.join(HOOKS, 'doctor.cjs'), ...args], { cwd, encoding: 'utf8' });
+    fs.rmSync(path.join(HOOKS, 'config.json'));
+    return r;
+  };
+  const tool = (name, required, ok = true) => ({ name, required, ...(ok ? say('1.2.3') : { cmd: 'ppkit-missing-cli-xyz' }) });
+  let r = doctor({ doctorTools: [tool('present', true), tool('optional', false, false)], doctorLogins: [] }, other);
+  report('doctor: optional tool missing is a warning, exit 0', r.status === 0 && /^OK\s+present: 1\.2\.3/m.test(r.stdout) && /^WARN\s+optional/m.test(r.stdout), r);
+  r = doctor({ doctorTools: [tool('required', true, false)], doctorLogins: [] }, other);
+  report('doctor: required tool missing fails, exit 1', r.status === 1 && /^FAIL\s+required/m.test(r.stdout), r);
+  const login = (name, text) => ({ name, required: true, devCheck: true, ...say(text) });
+  r = doctor({ doctorTools: [], doctorLogins: [login('dev', `https://${DEVHOST}/`)] }, proj2);
+  report('doctor: login towards the project DEV accepted', r.status === 0 && /^OK\s+dev/m.test(r.stdout), r);
+  r = doctor({ doctorTools: [], doctorLogins: [login('other', 'https://contoso-other.crm4.dynamics.com/')] }, proj2);
+  report('doctor: login without the project DEV fails', r.status === 1 && r.stdout.includes(DEVHOST), r);
+  if (process.platform === 'win32') {
+    spawnSync('git', ['init', '-q'], { cwd: proj2 });
+    spawnSync('git', ['config', 'core.longpaths', 'false'], { cwd: proj2 });
+    r = doctor({ doctorTools: [], doctorLogins: [] }, proj2, '--fix');
+    const v = spawnSync('git', ['config', '--get', 'core.longpaths'], { cwd: proj2, encoding: 'utf8' }).stdout.trim();
+    report('doctor --fix sets core.longpaths on Windows', r.status === 0 && v === 'true', r);
+    fs.rmSync(path.join(proj2, '.git'), { recursive: true, force: true });
+  }
+}
 
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(failed ? `\n${failed} of ${count} tests failed` : `\nAll ${count} tests passed`);

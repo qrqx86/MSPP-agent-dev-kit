@@ -43,6 +43,21 @@ check(`decision template at pp-kit/${ED.decisionTemplate}`, fs.existsSync(p('pp-
 
 r = run();
 check('re-install is idempotent', r.status === 0 && ppkitHooks().length === 7);
+check('manifest records file hashes', Object.keys(JSON.parse(fs.readFileSync(p('pp-kit', 'manifest.json'), 'utf8')).files || {}).includes('hooks/pp-kit/pre-shell.cjs'));
+
+// A file of the kit patched by hand in ~/.claude: backed up and reported, then replaced.
+const hook = p('hooks', 'pp-kit', 'pre-shell.cjs');
+const original = fs.readFileSync(hook, 'utf8');
+fs.writeFileSync(hook, `${original}
+// local patch
+`);
+r = run();
+const backups = fs.readdirSync(p('hooks', 'pp-kit')).filter((f) => f.startsWith('pre-shell.cjs.bak-ppkit-'));
+check('hand-modified file reported', r.stdout.includes(ED.texts.modified), r.stdout);
+check('hand-modified file backed up', backups.length === 1 && fs.readFileSync(p('hooks', 'pp-kit', backups[0]), 'utf8').includes('local patch'));
+check('hand-modified file replaced by the kit version', fs.readFileSync(hook, 'utf8') === original);
+r = run();
+check('unchanged file not reported again', !r.stdout.includes(ED.texts.modified));
 
 fs.writeFileSync(p('hooks', 'pp-kit', 'config.json'), '{ "allowPatterns": [] }');
 r = run('--uninstall');

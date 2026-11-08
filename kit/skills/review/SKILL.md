@@ -4,7 +4,7 @@ description: Quality gate with Kuno at the end of the sprint - a single review (
 argument-hint: [Story-ID | sprint]
 ---
 Review of the changes against the base branch (`git diff $(git merge-base HEAD origin/HEAD)` – fallback `origin/main` or `origin/master` – plus uncommitted changes). Story: $ARGUMENTS
-Output folder: `docs/stories/$ARGUMENTS/reviews/` (without a story: `docs/reviews/<date>/`).
+Output folder: `docs/stories/$ARGUMENTS/reviews/` (without a story: `docs/reviews/<date>/`). Kuno writes the findings files directly into this folder (pass it in the assignment) and returns only the outcome and the path; Medium/Low findings go into `to-fix.md`.
 
 ## Modes
 - **Sprint (default):** a single **kuno-quality** instance in `sprint` mode on the sprint diff (automated checks and all perspectives). Save in `reviews/outcome.md`. For each Critical/High finding: fix, then one instance in `verify` mode (`model: sonnet`). Go to Step 4.

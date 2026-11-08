@@ -28,10 +28,17 @@ Before any operation against Dataverse or the Power Platform:
 - Dataverse CLI `dataverse` (npm `@microsoft/dataverse`, preview): query, CRUD, describe, Custom API. Prefer it to curl/raw Web API.
 - Power Apps CLI `pa` (npm `@microsoft/power-apps-cli`): Code Apps.
 - Work items, DECISIONS, comments, pipelines – according to the tracker in `CLAUDE.md`:
-  - `azure-devops`: MCP server `azure-devops` (work items `wit_*`, pipelines);
+  - `azure-devops`: MCP server `azure-devops` (work items `wit_*`, pipelines); reads with the needed `fields` only, never `expand=all`;
+    writes batched: every write returns the whole work item;
   - `github`: `gh` CLI (`gh issue`, `gh workflow`) or a GitHub MCP server, if configured.
 - Documentation: the `microsoft-learn` MCP server is the authoritative source before stating platform behaviour.
 - Known PAC CLI pitfalls: see [references/pac-gotchas.md](references/pac-gotchas.md).
+- **Known issues** (commits and hooks, long paths and OneDrive, worktrees with junctions, tokens, export after push, tracker states,
+  flaky tests and Fluent dialogs): [references/known-issues.md](references/known-issues.md). Use the command given there instead of working around the problem.
+- Missing tool or expired login: **do not write your own wrapper**; stop and report it (workstation check:
+  `node ~/.claude/hooks/pp-kit/doctor.cjs`). Before writing a script, look for the ones listed in the project `CLAUDE.md`
+  (in the front-end repository: `tools/verify.cjs` for the gates, `tools/worktree.cjs` for worktrees).
+- `~/.claude/hooks/pp-kit/pp.cjs` (commits, task states, decisions, tracker writes) belongs to the **main session**: agents do not write to the tracker.
 
 ## 4. Hand-off through files
 Project level: `docs/project/spec.md`, `plan.md`, `tasks.md` (initial backlog) written by Pia with `/project-plan`,
@@ -43,7 +50,8 @@ Each story has the folder `docs/stories/<ID>/` (templates in `~/.claude/pp-kit/t
   if you must touch another agent's files, stop and report it to the orchestrator.
 - `decisions.md` – local mirror of the DECISION work items (ID, title, status).
 - `reviews/` – Kuno's findings per perspective.
-Read these files at the start of the task and update `tasks.md` (status of your task) at the end.
+Read these files at the start of the task and update `tasks.md` (status of your task) at the end. If `tasks.md` lives in a
+repository other than the one you work in, do not change it: put the updated row in your report, ready to paste.
 
 ## 5. Decisions
 Team agents run as subagents: they **cannot ask the user** and **cannot start other agents**. They return proposals,
@@ -103,4 +111,7 @@ Never declare checks that were not run.
   Findings (Kuno, Sigi) use one line per finding: `Severity | file:line | rule | fix`; without findings: `No findings.`
 - **Medium/Low findings** are not fixed right away: list them; they are closed in the end-of-sprint fix pass.
 - **Workspace:** reuse the existing worktree and `node_modules`; no `npm ci` in a new worktree when an identical install exists (link it). Vitest with `--maxWorkers=2`.
+- **Tests while working:** only the tests of the touched files (e.g. `vitest run <paths>`); the full suite **once** at the end of the block, with the repository's single gate.
+- **Commit per block:** with green gates commit the block and send the report right away, without waiting for the next block.
+- **Resume:** when the orchestrator resumes you with a message for the next block, do not reread the plan, spec and code you already read: start from the new task.
 - **Governance:** technical choices covered by the approved plan need no DECISION: note them in the result. One tracker comment per story at the end of the sprint, not one per step.

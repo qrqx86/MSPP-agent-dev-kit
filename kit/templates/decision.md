@@ -56,8 +56,16 @@ Approved: `gh issue close <n> --reason completed` + label `approved`; rejected: 
 Decisions not tied to a story (e.g. "DECISION: Project plan") have no parent story: create them without the link and
 record them only in `docs/project/decisions.md` (Story column `–`).
 
+## Showing the open decisions to the product owner
+A table `ID | Decision | Options | Recommendation`, read from `docs/project/decisions.md` (Open rows), so the product owner answers by ID:
+`node ~/.claude/hooks/pp-kit/pp.cjs decisions open`.
+
 ## Closing after an answer in chat (both trackers)
-Set the state (Approved / Rejected) and add a comment: `Outcome: <option> · decided by <person> · <YYYY-MM-DD>`.
+Only with an explicit answer that contains the approval and the ID or the option (see CLAUDE.md, Decisions); if the answer is ambiguous, ask which IDs.
+Set the state (Approved / Rejected) and add a comment: `Outcome: <option> · decided by <person> · <YYYY-MM-DD> · answer: "<verbatim quote>"`.
+In one line, for several decisions (local registers, comment and state in the tracker; refuses a quote without an explicit approval or that does not name the ID/option):
+`node ~/.claude/hooks/pp-kit/pp.cjs decisions close 1609-1612=A 1616="A variant: …" --reject 1613 --quote "<answer of the product owner>" --by "<person>" --ado --ado-state <closed state>`
+(first with `--dry-run`).
 Update the row in the story `decisions.md` and in `docs/project/decisions.md`. A decision that replaces an Approved one
 sets the old row to `Superseded by <ref>`. For lasting architectural decisions also write an ADR
 (`docs/adr/NNNN-<title>.md`, template `0000-template.md`) and cite its number in the DECISION.

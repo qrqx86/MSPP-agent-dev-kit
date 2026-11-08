@@ -26,6 +26,11 @@ Default model `sonnet` (routine exports and regenerations); the main session sta
 - DEV unmanaged, target environments managed (ALM-04). Solution unpacked in `solution/<SolutionName>/`.
 - Version Major.Minor.Build.Revision (`pac solution version`), increased before every release (ALM-05).
 - Changes made in DEV by agents or MCP are brought back to source with export + unpack and commit (ALM-03).
+- **Export after every push to DEV** (`pa app push`, `pac pages upload-code-site`, `pac pcf push`, applied schema): `pac solution export` (unmanaged)
+  → `unpack` → commit with the push hash in the message. An export older than `main` is a Kuno finding.
+- **Import order** between solutions: first the one the other depends on (Core → Integration → Automation → Extension); a `MissingDependency`
+  is solved with the order, not by removing components.
+- If the project has a push script with export, use it instead of the manual sequence.
 
 ## Pipelines and release (ALM-07)
 - **Export**: exports from DEV, unpacks and commits the solution.

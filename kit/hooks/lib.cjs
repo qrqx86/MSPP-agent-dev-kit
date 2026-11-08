@@ -70,6 +70,7 @@ function loadConfig() {
     for (const k of ['askPatterns', 'denyPatterns', 'solutionRequired']) {
       merged[k].forEach((r) => { toRegex(r.match); if (r.require) toRegex(r.require); });
     }
+    for (const list of Object.values(merged.agentWritePaths || {})) (Array.isArray(list) ? list : []).forEach(toRegex);
   } catch (e) {
     block(`Invalid pattern in the pp-kit configuration (${e.message}).`);
   }

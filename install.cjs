@@ -3,11 +3,13 @@
 // and merges the hook entries into ~/.claude/settings.json (existing hooks are preserved).
 // Usage: node install.cjs [--dry-run] [--uninstall] [--force]
 //   --force      also overwrite agents/skills with the same name that were not installed by pp-kit
+// Installed files changed by hand since the last install are backed up (<file>.bak-ppkit-<time>) and reported.
 //   PPKIT_HOME   alternative Claude configuration folder (default ~/.claude), used by the tests
 // Edition-specific settings (rules folder, texts) are in kit/install.json.
 'use strict';
 const fs = require('fs');
 const os = require('os');
+const crypto = require('crypto');
 const path = require('path');
 
 const DRY = process.argv.includes('--dry-run');
@@ -26,9 +28,34 @@ const log = (...a) => console.log(DRY ? '[dry-run]' : '', ...a);
 // What pp-kit installed before: manifest, or (installs older than the manifest) everything with our names.
 const legacy = !fs.existsSync(MANIFEST) && fs.existsSync(HOOK_DIR);
 let owned = [];
-try { owned = JSON.parse(fs.readFileSync(MANIFEST, 'utf8')).items || []; } catch { /* first install */ }
+let hashes = {}; // file (relative to the Claude folder) -> sha256 of what pp-kit installed last time
+try {
+  const m = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
+  owned = m.items || [];
+  hashes = m.files || {};
+} catch { /* first install */ }
 const isOwned = (rel) => legacy || owned.includes(rel);
 const installed = [];
+const files = {};
+const TS = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15);
+const sha = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
+const relOf = (d) => path.relative(CLAUDE, d).split(path.sep).join('/');
+
+// Copy one file. A file changed by hand since the last install (hash differs from the manifest) is
+// backed up and reported before it is replaced: changes to the kit belong in the kit repository.
+function copyFile(s, d) {
+  const src = fs.readFileSync(s);
+  const rel = relOf(d);
+  files[rel] = sha(src);
+  if (!fs.existsSync(d)) { log(T.create, d); if (!DRY) { fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(s, d); } return; }
+  const cur = fs.readFileSync(d);
+  if (cur.equals(src)) return;
+  if (hashes[rel] && hashes[rel] !== sha(cur)) {
+    log(T.modified, d, `(backup: ${path.basename(d)}.bak-ppkit-${TS})`);
+    if (!DRY) fs.copyFileSync(d, `${d}.bak-ppkit-${TS}`);
+  } else log(T.update, d);
+  if (!DRY) fs.copyFileSync(s, d);
+}
 
 function copyDir(src, dst, { keep = [] } = {}) {
   for (const name of fs.readdirSync(src)) {
@@ -40,10 +67,7 @@ function copyDir(src, dst, { keep = [] } = {}) {
       copyDir(s, d, { keep }); // keep applies at every level (e.g. skills/<x>/rules)
     } else {
       if (keep.includes(name) && fs.existsSync(d)) { log(T.keep, d); continue; }
-      const same = fs.existsSync(d) && fs.readFileSync(d).equals(fs.readFileSync(s));
-      if (same) continue;
-      log(fs.existsSync(d) ? T.update : T.create, d);
-      if (!DRY) { fs.mkdirSync(dst, { recursive: true }); fs.copyFileSync(s, d); }
+      copyFile(s, d);
     }
   }
 }
@@ -57,10 +81,7 @@ function installItems(kind) {
     if (fs.existsSync(d) && !isOwned(rel) && !FORCE) { log(T.notOurs, d); continue; }
     installed.push(rel);
     if (fs.statSync(s).isDirectory()) copyDir(s, d, { keep: ['rules'] }); // rules/ may be a link to a rulebook
-    else if (!fs.existsSync(d) || !fs.readFileSync(d).equals(fs.readFileSync(s))) {
-      log(fs.existsSync(d) ? T.update : T.create, d);
-      if (!DRY) { fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(s, d); }
-    }
+    else copyFile(s, d);
   }
 }
 
@@ -130,7 +151,7 @@ if (!UNINSTALL) {
   if (!DRY) {
     fs.mkdirSync(STATE_DIR, { recursive: true });
     fs.copyFileSync(path.join(KIT, 'templates', ED.decisionTemplate), path.join(STATE_DIR, ED.decisionTemplate));
-    fs.writeFileSync(MANIFEST, JSON.stringify({ items: installed }, null, 2) + '\n');
+    fs.writeFileSync(MANIFEST, JSON.stringify({ items: installed, files }, null, 2) + '\n');
   }
   linkRules();
 } else {
@@ -151,11 +172,10 @@ const next = JSON.stringify(settings, null, 2) + '\n';
 if (fs.existsSync(settingsPath) && fs.readFileSync(settingsPath, 'utf8') === next) {
   log(T.settingsSame);
 } else {
-  const ts = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15);
-  log(T.update, settingsPath, `(backup: settings.json.bak-ppkit-${ts})`);
+  log(T.update, settingsPath, `(backup: settings.json.bak-ppkit-${TS})`);
   if (!DRY) {
     fs.mkdirSync(CLAUDE, { recursive: true });
-    if (fs.existsSync(settingsPath)) fs.copyFileSync(settingsPath, `${settingsPath}.bak-ppkit-${ts}`);
+    if (fs.existsSync(settingsPath)) fs.copyFileSync(settingsPath, `${settingsPath}.bak-ppkit-${TS}`);
     fs.writeFileSync(settingsPath, next);
   }
 }

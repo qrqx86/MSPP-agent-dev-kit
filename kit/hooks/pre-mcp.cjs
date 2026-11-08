@@ -54,6 +54,8 @@ if (!allowed) {
 }
 
 // Write operations: verb tokens of the operation name, e.g. wit_create_work_item, set_current_env.
+// Servers listed in mcpWriteAllowServers skip the confirmation (the environment checks above still apply).
+if ((cfg.mcpWriteAllowServers || []).includes(server)) process.exit(0);
 const tokens = op.toLowerCase().split(/[_-]+/);
 const read = new Set(cfg.mcpReadVerbs);
 const write = new Set(cfg.mcpWriteVerbs);

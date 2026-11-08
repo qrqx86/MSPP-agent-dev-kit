@@ -28,7 +28,14 @@ for (const a of agents) {
   for (const s of ['pp-standards', 'pp-team-rules']) if (!fm.includes(`- ${s}`)) err(f, `skill ${s} not preloaded`);
   // A tools allowlist removes Skill and every MCP tool: agents inherit the tools (restrict with disallowedTools).
   if (field(fm, 'tools') !== undefined) err(f, 'tools allowlist found: it removes Skill and MCP tools; use disallowedTools');
-  if (a.startsWith('kuno') && !/\bWrite\b.*\bEdit\b/.test(field(fm, 'disallowedTools') || '')) err(f, 'Kuno must disallow Write and Edit');
+  // Kuno: no Edit; Write only in the findings paths, limited by the pre-write hook (agentWritePaths).
+  if (a.startsWith('kuno')) {
+    const dis = field(fm, 'disallowedTools') || '';
+    const cfg = JSON.parse(fs.readFileSync(path.join(KIT, 'hooks', 'config.default.json'), 'utf8'));
+    const writeLimited = ((cfg.agentWritePaths || {})[a.replace(/\.md$/, '')] || []).length > 0;
+    if (!/\bEdit\b/.test(dis) || !/\bNotebookEdit\b/.test(dis)) err(f, 'Kuno must disallow Edit and NotebookEdit');
+    if (!/\bWrite\b/.test(dis) && !writeLimited) err(f, 'Kuno with Write needs agentWritePaths in config.default.json');
+  }
   // Subagents cannot start other agents or ask the user: delegation goes through the orchestrator.
   const body = fs.readFileSync(f, 'utf8').replace(/^---[\s\S]*?---/, '');
   for (const line of body.split(/\r?\n/)) {

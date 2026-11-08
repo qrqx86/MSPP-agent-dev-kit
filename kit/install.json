@@ -18,6 +18,7 @@
     "badSettings": "settings.json is not valid JSON, nothing changed:",
     "settingsSame": "settings.json unchanged",
     "installed": "pp-kit installed. Restart Claude Code (or /agents) to load agents and hooks.",
-    "uninstalled": "pp-kit uninstalled (hooks/pp-kit/config.json and settings backups are kept)."
+    "uninstalled": "pp-kit uninstalled (hooks/pp-kit/config.json and settings backups are kept).",
+    "modified": "CHANGED BY HAND since the last install, backing up and replacing (kit changes belong in the kit repository):"
   }
 }

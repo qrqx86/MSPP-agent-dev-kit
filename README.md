@@ -28,7 +28,8 @@ What the installer touches in `~/.claude`:
 | `settings.json` | pp-kit hook entries added (re-install replaces only them); backup `settings.json.bak-ppkit-<timestamp>` |
 
 Re-installing overwrites local edits to pp-kit's own agents and skills: customise through the project `CLAUDE.md`,
-your rulebook or `config.json` instead. Requires a Claude Code version with subagent `skills` preloading and
+your rulebook or `config.json` instead. The manifest records a hash of every installed file: a kit file changed by hand in
+`~/.claude` is reported and saved as `<file>.bak-ppkit-<timestamp>` before it is replaced. Requires a Claude Code version with subagent `skills` preloading and
 `SubagentStop` hooks (2025 or later).
 
 Requirements:
@@ -36,6 +37,26 @@ Requirements:
 - `dataverse` and `pa` CLIs: `npm i -g @microsoft/dataverse @microsoft/power-apps-cli`
 - PAC CLI, up to date: `dotnet tool update --global Microsoft.PowerApps.CLI.Tool`
 - Azure DevOps tracker: az CLI (`az login`) for the `azure-devops` MCP server · GitHub tracker: `gh` CLI (`gh auth login`)
+
+Workstation check (day 0 and start of every sprint), in the project folder:
+```bash
+node ~/.claude/hooks/pp-kit/doctor.cjs        # CLIs, logins to the DEV of CLAUDE.md, clone in OneDrive/long path, RAM
+node ~/.claude/hooks/pp-kit/doctor.cjs --fix  # also sets core.longpaths (and windows.appendAtomically inside OneDrive)
+```
+Checked tools and logins: `doctorTools` and `doctorLogins` in `kit/hooks/config.default.json` (override in `config.json`).
+
+One-line commands for the main session (`pp.cjs`, one result line instead of the whole MCP response):
+```bash
+pp=~/.claude/hooks/pp-kit/pp.cjs
+node $pp commit "docs: …" --ab 1241 --checks "validate OK" --files a.md --push   # AI-Assisted:/Verified: lines, only the given files
+node $pp task S12 B5 done --note "3a1b002"                                    # state in docs/stories/<S>/tasks.md
+node $pp decisions open                                                        # table of the open decisions
+node $pp decisions close 1609-1612=A --reject 1613 --quote "approve 1609-1612 A, reject 1613" --by "PO" --ado --dry-run
+node $pp ado comment 1241 --file summary.md                                    # Markdown → HTML (GitHub: gh issue comment)
+node $pp stats ~/.claude/projects/<project>/<session>.jsonl                    # agents and tokens, MCP responses, scripts
+```
+Tracker writes (`ado`, `decisions close --ado`) ask for confirmation through the hook, except with `--dry-run`; the Azure DevOps token
+comes from `ADO_TOKEN` or `az account get-access-token` and stays in memory.
 
 Microsoft plugins (marketplace `microsoft/power-platform-skills`): power-pages, model-apps, canvas-apps,
 code-apps-preview, mcp-apps, pcf, power-automate, dataverse, mobile-app, power-apps-mobile-extension,
@@ -51,6 +72,7 @@ claude plugin update dataverse@power-platform-skills   # repeat for each plugin
 ```powershell
 node tests/hooks.test.cjs     # deterministic hook tests (copies the hooks to a temp folder)
 node tests/install.test.cjs   # installer and uninstaller in a temporary ~/.claude
+node tests/templates.test.cjs # tools of the front-end template (merge-locales, worktree, verify)
 node tests/validate-kit.cjs   # kit structure, obsolete commands, real environment URLs, rule IDs
 node tests/run-evals.cjs      # agent behaviour scenarios (calls Claude, costs tokens)
 node tests/run-evals.cjs --only alma-no-prod-import
@@ -64,8 +86,8 @@ The evals run the agents **installed** in `~/.claude` (install first), headless 
 | `kit/skills/pp-team-rules/` | `~/.claude/skills/` | common rules: Rule 0 environment, valid tools, story files, DECISIONS, escalation after 2 attempts, result format, PAC pitfalls |
 | `kit/skills/pp-standards/` | `~/.claude/skills/` | baseline standards with rule IDs (+ optional `rules/` for your organization rulebook) |
 | `kit/skills/{new-project,project-plan,story,data-model,review,test,deploy-test}/` | `~/.claude/skills/` | workflows invoked with `/name` |
-| `kit/hooks/` | `~/.claude/hooks/pp-kit/` | Node.js hooks |
-| `kit/templates/` | `~/.claude/pp-kit/templates/` | `CLAUDE.md`, `.mcp.json`, `.gitignore`, `docs/project/`, `docs/stories/_template/`, `docs/adr/`, DECISION procedure |
+| `kit/hooks/` | `~/.claude/hooks/pp-kit/` | Node.js hooks, `doctor.cjs` (workstation), `pp.cjs` (main session commands), `state.cjs` |
+| `kit/templates/` | `~/.claude/pp-kit/templates/` | `CLAUDE.md`, `.mcp.json`, `.gitignore`, `docs/project/`, `docs/stories/_template/`, `docs/adr/`, DECISION procedure; `frontend/` (UI conventions, `verify`, `worktree`, `merge-locales`) |
 | `kit/evals/` | – | behaviour scenarios |
 
 ## Agents
@@ -118,7 +140,7 @@ Declared per project in `CLAUDE.md` (`- Work item tracker: azure-devops | github
 | | | pp-kit projects with a declared DEV | **allow-list**: only the DEV environment of `CLAUDE.md` (exact URL or ID), also for the active pac profile; local pac commands (`solution pack/unpack`, …) skip the profile check |
 | | | pp-kit projects | blocks pushes without a solution (`pac pcf push`, `pa app push`) and `git commit` (also `-F file`, `git -C dir`) without a story reference of the project tracker (`AB#<ID>` or `#<ID>`) |
 | `pre-mcp.cjs` | PreToolUse MCP Dataverse/Azure DevOps/GitHub/FlowAgent | everywhere | blocks TEST/STAGING/PROD hosts and environment arguments and, in projects, any environment (URL or GUID) other than DEV; asks for confirmation for write operations (verbs such as create, update, set, edit, run; reads such as `get_run_history` do not ask) |
-| `pre-write.cjs` | PreToolUse Write/Edit | everywhere | blocks passwords, keys, tokens (also unquoted in `.env`/YAML), client secrets, connection strings, SAS tokens, JWTs |
+| `pre-write.cjs` | PreToolUse Write/Edit | everywhere | blocks passwords, keys, tokens (also unquoted in `.env`/YAML), client secrets, connection strings, SAS tokens, JWTs; limits a subagent's writes to the paths in `agentWritePaths` (Kuno: only `docs/stories/<ID>/reviews/` and `docs/reviews/<date>/`) |
 | `post-lint.cjs` | PostToolUse Write/Edit | everywhere | Prettier/ESLint `--fix` if installed in the project, `dotnet format whitespace` |
 | `session-start.cjs` | SessionStart | pp-kit projects | active story (from the branch), open DECISIONS and unfinished tasks |
 | `subagent-stop.cjs` | SubagentStop | pp-kit projects | sends back a team agent's result that lacks the "Rules applied" section |
